@@ -1,0 +1,36 @@
+name: Auto Gold Bot
+
+on:
+  schedule:
+    # Chạy vào phút thứ 01 mỗi giờ từ Thứ 2 đến Thứ 6 (theo giờ quốc tế UTC)
+    - cron: '1 * * * 1-5'
+  workflow_dispatch: # Cho phép bấm chạy thử bằng tay bất kỳ lúc nào
+
+jobs:
+  run-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tai ma nguon
+        uses: actions/checkout@v4
+
+      - name: Cai dat Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Cai dat thu vien
+        run: pip install requests tradingview-ta
+
+      - name: Chay bao cao gia vang
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          CURRENT_HOUR=$(date -u +"%H")
+          # Kiem tra neu trung gio dong nen 4H (UTC: 01, 05, 09, 13, 17, 21) thi chay them khung 4H
+          if [ "$CURRENT_HOUR" = "01" ] || [ "$CURRENT_HOUR" = "05" ] || [ "$CURRENT_HOUR" = "09" ] || [ "$CURRENT_HOUR" = "13" ] || [ "$CURRENT_HOUR" = "17" ] || [ "$CURRENT_HOUR" = "21" ]; then
+            python gold_bot.py 4H
+          fi
+          # Luon chay khung 1H moi dau gio
+          python gold_bot.py 1H
