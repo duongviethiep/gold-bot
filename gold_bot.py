@@ -92,7 +92,7 @@ Trình bày đúng 4 gạch đầu dòng ngắn gọn:
 Không dùng lời chào hỏi, đi thẳng vào các gạch đầu dòng.
 """
 
-  url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+  url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
   headers = {"Content-Type": "application/json"}
   payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
