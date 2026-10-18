@@ -2,9 +2,9 @@ name: Auto Gold Bot
 
 on:
   schedule:
-    # Chạy vào phút thứ 01 mỗi giờ từ Thứ 2 đến Thứ 6 (theo giờ quốc tế UTC)
-    - cron: '1 * * * 1-5'
-  workflow_dispatch: # Cho phép bấm chạy thử bằng tay bất kỳ lúc nào
+    # Kích hoạt mỗi đầu giờ (phút thứ 01)
+    - cron: '1 * * * *'
+  workflow_dispatch: # Nút bấm chạy thử thủ công
 
 jobs:
   run-alert:
@@ -27,10 +27,31 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          CURRENT_HOUR=$(date -u +"%H")
-          # Kiem tra neu trung gio dong nen 4H (UTC: 01, 05, 09, 13, 17, 21) thi chay them khung 4H
-          if [ "$CURRENT_HOUR" = "01" ] || [ "$CURRENT_HOUR" = "05" ] || [ "$CURRENT_HOUR" = "09" ] || [ "$CURRENT_HOUR" = "13" ] || [ "$CURRENT_HOUR" = "17" ] || [ "$CURRENT_HOUR" = "21" ]; then
+          # Lay thu trong tuan (0: Chu Nhat, 1: Thu 2, ..., 6: Thu 7) va gio theo UTC
+          DAY_OF_WEEK=$(date -u +"%w")
+          HOUR_UTC=$(date -u +"%H")
+
+          # KIEM TRA GIO MO CUA THI TRUONG VANG:
+          # Dong cua: Tu 22h UTC Thu 6 (05h sang Thu 7 gio VN) den 22h UTC Chu Nhat (05h sang Thu 2 gio VN)
+          if [ "$DAY_OF_WEEK" -eq 6 ]; then
+            echo "Thu 7 (gio UTC) - Thi truong dong cua. Bo qua."
+            exit 0
+          fi
+
+          if [ "$DAY_OF_WEEK" -eq 0 ] && [ "$HOUR_UTC" -lt 22 ]; then
+            echo "Chu Nhat truoc 22h UTC - Thi truong chua mo cua. Bo qua."
+            exit 0
+          fi
+
+          if [ "$DAY_OF_WEEK" -eq 5 ] && [ "$HOUR_UTC" -ge 22 ]; then
+            echo "Sau 22h UTC Thu 6 - Thi truong da dong cua cuoi tuan. Bo qua."
+            exit 0
+          fi
+
+          # Chay khung 4H neu trung gio dong nen (01, 05, 09, 13, 17, 21 UTC)
+          if [ "$HOUR_UTC" = "01" ] || [ "$HOUR_UTC" = "05" ] || [ "$HOUR_UTC" = "09" ] || [ "$HOUR_UTC" = "13" ] || [ "$HOUR_UTC" = "17" ] || [ "$HOUR_UTC" = "21" ]; then
             python gold_bot.py 4H
           fi
+
           # Luon chay khung 1H moi dau gio
           python gold_bot.py 1H
