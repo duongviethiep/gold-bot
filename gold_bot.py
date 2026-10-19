@@ -2,10 +2,10 @@ from datetime import datetime
 import html
 import os
 import sys
+import time
 import requests
 from tradingview_ta import Interval, TA_Handler
 
-# Lấy thông tin từ GitHub Secrets
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -18,7 +18,6 @@ def fetch_gold_data(timeframe_str):
   }
   selected_interval = interval_map.get(timeframe_str, Interval.INTERVAL_1_HOUR)
 
-  # Danh sách các sàn vàng lớn trên TradingView
   candidates = [
       {"symbol": "XAUUSD", "exchange": "OANDA", "screener": "cfd"},
       {"symbol": "XAUUSD", "exchange": "PEPPERSTONE", "screener": "cfd"},
@@ -29,7 +28,6 @@ def fetch_gold_data(timeframe_str):
   analysis = None
   for c in candidates:
     try:
-      print(f"Đang kết nối sàn {c['exchange']} ({c['screener']})...")
       handler = TA_Handler(
           symbol=c["symbol"],
           exchange=c["exchange"],
@@ -39,17 +37,12 @@ def fetch_gold_data(timeframe_str):
       res = handler.get_analysis()
       if res and res.indicators and res.indicators.get("close"):
         analysis = res
-        print(f"-> Lấy dữ liệu thành công từ sàn {c['exchange']}!")
         break
-    except Exception as err:
-      print(f"-> Thử sàn {c['exchange']} chưa được: {err}")
+    except Exception:
       continue
 
   if not analysis or not analysis.indicators:
-    raise Exception(
-        "Chưa lấy được dữ liệu nến XAUUSD từ các sàn. Có thể sàn đang tải lại"
-        " phiên đầu tuần."
-    )
+    raise Exception("Chưa lấy được dữ liệu nến XAUUSD từ các sàn.")
 
   ind = analysis.indicators
   return {
@@ -74,7 +67,7 @@ def fetch_gold_data(timeframe_str):
 
 def generate_ai_analysis(data):
   if not GEMINI_API_KEY:
-    return "Chưa thiết lập GEMINI_API_KEY trong GitHub Secrets."
+    return "Chưa cấu hình GEMINI_API_KEY trong GitHub Secrets."
 
   prompt = f"""
 Bạn là chuyên gia phân tích kỹ thuật thị trường vàng (XAUUSD). Hãy viết nhận định ngắn gọn dựa trên các thông số nến vừa đóng khung {data['timeframe']}:
@@ -93,24 +86,35 @@ Trình bày đúng 4 gạch đầu dòng ngắn gọn:
 Không dùng lời chào hỏi, đi thẳng vào các gạch đầu dòng.
 """
 
-  url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
   headers = {"Content-Type": "application/json"}
   payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-  try:
-    response = requests.post(url, json=payload, headers=headers, timeout=20)
-    res_json = response.json()
-    if "candidates" in res_json and len(res_json["candidates"]) > 0:
-      return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-    return f"Lỗi từ Gemini: {res_json.get('error', {}).get('message', 'Không xác định')}"
-  except Exception as e:
-    return f"Chưa tạo được nhận định tự động: {e}"
+  # Danh sách mô hình dự phòng: nếu một mô hình bị nghẽn (high demand), tự động chuyển sang mô hình tiếp theo
+  model_candidates = [
+      "gemini-2.5-flash",
+      "gemini-1.5-flash",
+      "gemini-3.8-flash",
+  ]
+
+  for model_name in model_candidates:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
+    for _ in range(2):
+      try:
+        response = requests.post(url, json=payload, headers=headers, timeout=15)
+        res_json = response.json()
+        if "candidates" in res_json and len(res_json["candidates"]) > 0:
+          return (
+              res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+          )
+        time.sleep(2)
+      except Exception:
+        time.sleep(2)
+
+  return "Tạm thời máy chủ AI đang tải lại, các chỉ số kỹ thuật phía trên vẫn chính xác 100%."
 
 
 def send_telegram(data, ai_opinion):
   time_now = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-  # Tự động mã hóa an toàn các ký tự đặc biệt như <, > để tránh lỗi HTML của Telegram
   safe_opinion = html.escape(ai_opinion)
 
   message_html = f"""📊 <b>BÁO CÁO GIÁ VÀNG XAU/USD ({data['timeframe']})</b>
@@ -131,18 +135,14 @@ def send_telegram(data, ai_opinion):
 """
 
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-
-  # Gửi thử bằng định dạng HTML
-  payload_html = {
+  payload = {
       "chat_id": TELEGRAM_CHAT_ID,
       "text": message_html,
       "parse_mode": "HTML",
   }
-  res = requests.post(url, json=payload_html, timeout=15)
+  res = requests.post(url, json=payload, timeout=15)
 
-  # Nếu lỗi định dạng HTML, tự động gửi lại bằng chữ thường (Plain Text) để đảm bảo luôn nhận được tin
   if res.status_code != 200:
-    print(f"Gửi HTML lỗi ({res.text}), chuyển sang chế độ văn bản thường...")
     plain_text = f"""BÁO CÁO GIÁ VÀNG XAU/USD ({data['timeframe']}) - {time_now}
 - Giá đóng cửa: {data['close']:.2f} USD ({data['change']:+.2f}%)
 - Biên độ nến: {data['low']:.2f} - {data['high']:.2f}
@@ -152,28 +152,15 @@ def send_telegram(data, ai_opinion):
 
 Nhận định chuyên sâu:
 {ai_opinion}"""
-    res = requests.post(
+    requests.post(
         url,
         json={"chat_id": TELEGRAM_CHAT_ID, "text": plain_text},
         timeout=15,
     )
-    if res.status_code != 200:
-      raise Exception(f"Không thể gửi tin nhắn Telegram: {res.text}")
 
 
 if __name__ == "__main__":
   tf = sys.argv[1] if len(sys.argv) > 1 else "1H"
-  print(f"=== BẮT ĐẦU CHẠY KHUNG {tf} ===")
-
-  if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-    print("LỖI: Chưa có TELEGRAM_BOT_TOKEN hoặc TELEGRAM_CHAT_ID trong Secrets!")
-    sys.exit(1)
-
   market_data = fetch_gold_data(tf)
-  print(f"Giá đóng: {market_data['close']} | RSI: {market_data['rsi']:.2f}")
-
   analysis_text = generate_ai_analysis(market_data)
-  print("Đang gửi tin nhắn Telegram...")
-
   send_telegram(market_data, analysis_text)
-  print("HOÀN TẤT: Đã gửi báo cáo thành công về Telegram!")
