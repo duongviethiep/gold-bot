@@ -32,6 +32,8 @@ def fetch_gold_data(timeframe_str):
           screener=c["screener"],
           interval=selected_interval,
       )
+      # Yêu cầu máy chủ TradingView tải thêm chỉ báo ATR và VWAP
+      handler.add_indicators(["ATR", "VWAP"])
       res = handler.get_analysis()
       if res and res.indicators and res.indicators.get("close"):
         analysis = res
@@ -43,6 +45,15 @@ def fetch_gold_data(timeframe_str):
     raise Exception("Chưa lấy được dữ liệu nến XAUUSD từ các sàn.")
 
   ind = analysis.indicators
+
+  # Lấy ATR thực tế (nếu sàn chưa tính kịp thì tự động tính từ biên độ nến High - Low)
+  atr_val = ind.get("ATR")
+  if not atr_val or atr_val == 0.0:
+    atr_val = abs(ind.get("high", 0.0) - ind.get("low", 0.0))
+
+  # Lấy VWAP hoặc đường trung bình gia quyền khối lượng VWMA của TradingView
+  vwap_val = ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0)
+
   return {
       "timeframe": timeframe_str,
       "close": ind.get("close", 0.0),
@@ -55,8 +66,8 @@ def fetch_gold_data(timeframe_str):
       "macd": ind.get("MACD.macd", 0.0),
       "macd_signal": ind.get("MACD.signal", 0.0),
       "adx": ind.get("ADX", 0.0),
-      "atr": ind.get("ATR", 0.0),
-      "vwap": ind.get("VWAP", 0.0),
+      "atr": atr_val,
+      "vwap": vwap_val,
       "ema20": ind.get("EMA20", 0.0),
       "ema50": ind.get("EMA50", 0.0),
       "ema200": ind.get("EMA200", 0.0),
@@ -130,8 +141,8 @@ def build_fallback_analysis(d):
   support = min(low, ema20) if ema20 > 0 else low
   resistance = max(high, bb_up) if bb_up > 0 else high
   vwap_str = (
-      f" Giá đang ở {'trên' if close >= vwap else 'dưới'} mức bình quân VWAP"
-      f" ({vwap:.2f} USD)."
+      f" Giá đang ở {'trên' if close >= vwap else 'dưới'} mốc trung bình dòng"
+      f" tiền ({vwap:.2f} USD)."
       if vwap > 0
       else ""
   )
@@ -142,7 +153,7 @@ def build_fallback_analysis(d):
 
   # 4. Kịch bản & Quản trị rủi ro theo ATR
   atr_str = (
-      f" (Biên độ giật ATR ~{atr:.2f} USD, gợi ý khoảng cắt lỗ an toàn"
+      f" (Biên độ dao động ATR ~{atr:.2f} USD, gợi ý khoảng cắt lỗ an toàn"
       f" ~{1.5*atr:.2f} USD)."
       if atr > 0
       else "."
@@ -177,7 +188,7 @@ Bạn là chuyên gia phân tích kỹ thuật thị trường vàng (XAUUSD). H
 - MACD: {data['macd']:.2f} (Signal: {data['macd_signal']:.2f})
 - Đường xu hướng: EMA20={data['ema20']:.2f}, EMA50={data['ema50']:.2f}, EMA200={data['ema200']:.2f}
 - Dải Bollinger: {data['bb_lower']:.2f} - {data['bb_upper']:.2f}
-- Biến động & Dòng tiền: ATR={data['atr']:.2f} USD, VWAP={data['vwap']:.2f} USD
+- Biến động & Dòng tiền: ATR={data['atr']:.2f} USD, VWAP/VWMA={data['vwap']:.2f} USD
 - Tín hiệu tổng quan: {data['summary']}
 
 Trình bày đúng 4 gạch đầu dòng ngắn gọn:
@@ -223,7 +234,7 @@ def send_telegram(data, ai_opinion):
 • RSI (14): <code>{data['rsi']:.2f}</code> | ADX (14): <code>{data['adx']:.2f}</code>
 • MACD: <code>{data['macd']:.2f}</code> | Signal: <code>{data['macd_signal']:.2f}</code>
 • EMA: EMA20: <code>{data['ema20']:.2f}</code> | EMA50: <code>{data['ema50']:.2f}</code> | EMA200: <code>{data['ema200']:.2f}</code>
-• ATR (14): <code>{data['atr']:.2f} USD</code> | VWAP: <code>{data['vwap']:.2f} USD</code>
+• ATR: <code>{data['atr']:.2f} USD</code> | VWAP: <code>{data['vwap']:.2f} USD</code>
 • Tín hiệu kỹ thuật: <b>{data['summary']}</b>
 
 🧠 <b>Nhận định & Phân tích chuyên sâu:</b>
