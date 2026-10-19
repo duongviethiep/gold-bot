@@ -2,7 +2,6 @@ from datetime import datetime
 import html
 import os
 import sys
-import time
 import requests
 from tradingview_ta import Interval, TA_Handler
 
@@ -22,7 +21,6 @@ def fetch_gold_data(timeframe_str):
       {"symbol": "XAUUSD", "exchange": "OANDA", "screener": "cfd"},
       {"symbol": "XAUUSD", "exchange": "PEPPERSTONE", "screener": "cfd"},
       {"symbol": "XAUUSD", "exchange": "FOREXCOM", "screener": "cfd"},
-      {"symbol": "GOLD", "exchange": "TVC", "screener": "cfd"},
   ]
 
   analysis = None
@@ -65,9 +63,91 @@ def fetch_gold_data(timeframe_str):
   }
 
 
+def build_fallback_analysis(d):
+  """Hệ thống phân tích kỹ thuật dự phòng tự động tính toán khi Google AI bận."""
+  close, ema20, ema50, ema200 = d["close"], d["ema20"], d["ema50"], d["ema200"]
+  rsi, macd, macd_sig = d["rsi"], d["macd"], d["macd_signal"]
+  low, high, bb_up, bb_low = (
+      d["low"],
+      d["high"],
+      d["bb_upper"],
+      d["bb_lower"],
+  )
+
+  # 1. Cấu trúc xu hướng & vị thế EMA
+  if close > ema20 and ema20 > ema50:
+    trend = (
+        f"Xu hướng tăng ngắn hạn duy trì tích cực khi giá ({close:.2f}) vận"
+        f" động vững chắc trên dải EMA20 ({ema20:.2f}) và EMA50 ({ema50:.2f})."
+    )
+  elif close < ema20 and ema20 < ema50:
+    trend = (
+        f"Xu hướng giảm ngắn hạn chiếm ưu thế khi giá ({close:.2f}) nằm dưới áp"
+        f" lực cản của EMA20 ({ema20:.2f}) và EMA50 ({ema50:.2f})."
+    )
+  else:
+    trend = (
+        f"Thị trường đang tích lũy giằng co quanh vùng hội tụ EMA20"
+        f" ({ema20:.2f}) và EMA50 ({ema50:.2f}), chưa bứt phá rõ rệt."
+    )
+
+  # 2. Động lượng RSI & MACD
+  if rsi > 70:
+    mom_rsi = (
+        f"RSI ({rsi:.1f}) chạm vùng quá mua, cảnh báo áp lực chốt lời rung lắc."
+    )
+  elif rsi < 30:
+    mom_rsi = (
+        f"RSI ({rsi:.1f}) vào vùng quá bán, tiềm ẩn nhịp hồi phục kỹ thuật."
+    )
+  else:
+    mom_rsi = f"RSI ({rsi:.1f}) vận động ở mức trung tính ổn định."
+
+  if macd > macd_sig:
+    mom_macd = (
+        f"Đường MACD ({macd:.2f}) duy trì trên Signal ({macd_sig:.2f}), lực"
+        " mua chiếm ưu thế."
+    )
+  else:
+    mom_macd = (
+        f"Đường MACD ({macd:.2f}) cắt dưới Signal ({macd_sig:.2f}), động lượng"
+        " tăng đang suy yếu."
+    )
+  momentum = f"{mom_rsi} {mom_macd}"
+
+  # 3. Vùng hỗ trợ & kháng cự
+  support = min(low, ema20) if ema20 > 0 else low
+  resistance = max(high, bb_up) if bb_up > 0 else high
+  sr = (
+      f"Vùng hỗ trợ then chốt gần nhất quanh {support:.2f} USD; vùng cản kháng"
+      f" cự cần vượt qua là {resistance:.2f} USD."
+  )
+
+  # 4. Kịch bản xu hướng tiếp theo
+  if close > ema20 and rsi >= 50 and macd > macd_sig:
+    scenario = (
+        "Ưu tiên chiến lược canh mua theo xu hướng khi giá kiểm tra lại vùng hỗ"
+        f" trợ {support:.2f} USD, mục tiêu hướng tới {resistance:.2f} USD."
+    )
+  elif close < ema20 and rsi < 50:
+    scenario = (
+        f"Ưu tiên quan sát hoặc canh bán ngắn hạn nếu giá hồi phục lên vùng cản"
+        f" {ema20:.2f} USD nhưng không vượt được."
+    )
+  else:
+    scenario = (
+        f"Giá đang dao động tích lũy trong biên độ {support:.2f} -"
+        f" {resistance:.2f} USD, khuyến nghị chờ tín hiệu phá vỡ rõ ràng."
+    )
+
+  return (
+      f"• {trend}\n• {momentum}\n• {sr}\n• {scenario}"
+  )
+
+
 def generate_ai_analysis(data):
   if not GEMINI_API_KEY:
-    return "Chưa cấu hình GEMINI_API_KEY trong GitHub Secrets."
+    return build_fallback_analysis(data)
 
   prompt = f"""
 Bạn là chuyên gia phân tích kỹ thuật thị trường vàng (XAUUSD). Hãy viết nhận định ngắn gọn dựa trên các thông số nến vừa đóng khung {data['timeframe']}:
@@ -86,31 +166,25 @@ Trình bày đúng 4 gạch đầu dòng ngắn gọn:
 Không dùng lời chào hỏi, đi thẳng vào các gạch đầu dòng.
 """
 
-  headers = {"Content-Type": "application/json"}
+  headers = {
+      "Content-Type": "application/json",
+      "x-goog-api-key": GEMINI_API_KEY,
+  }
   payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-  # Danh sách mô hình dự phòng: nếu một mô hình bị nghẽn (high demand), tự động chuyển sang mô hình tiếp theo
-  model_candidates = [
-      "gemini-2.5-flash",
-      "gemini-1.5-flash",
-      "gemini-3.8-flash",
-  ]
+  models = ["gemini-2.5-flash-lite", "gemini-3.8-flash"]
+  for model_name in models:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
+    try:
+      response = requests.post(url, json=payload, headers=headers, timeout=12)
+      res_json = response.json()
+      if "candidates" in res_json and len(res_json["candidates"]) > 0:
+        return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception:
+      pass
 
-  for model_name in model_candidates:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
-    for _ in range(2):
-      try:
-        response = requests.post(url, json=payload, headers=headers, timeout=15)
-        res_json = response.json()
-        if "candidates" in res_json and len(res_json["candidates"]) > 0:
-          return (
-              res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-          )
-        time.sleep(2)
-      except Exception:
-        time.sleep(2)
-
-  return "Tạm thời máy chủ AI đang tải lại, các chỉ số kỹ thuật phía trên vẫn chính xác 100%."
+  # Nếu Google AI quá tải, lập tức kích hoạt bộ phân tích kỹ thuật thông minh
+  return build_fallback_analysis(data)
 
 
 def send_telegram(data, ai_opinion):
