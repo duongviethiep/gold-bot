@@ -1,9 +1,7 @@
 name: Auto Gold Bot
 
 on:
-  schedule:
-    # Kích hoạt mỗi đầu giờ (phút thứ 01)
-    - cron: '1 * * * *'
+ 
   workflow_dispatch: # Nút bấm chạy thử thủ công
 
 jobs:
