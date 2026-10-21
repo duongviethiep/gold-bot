@@ -1,8 +1,7 @@
 name: Auto Gold Bot
 
 on:
- 
-  workflow_dispatch: # Nút bấm chạy thử thủ công
+  workflow_dispatch:
 
 jobs:
   run-alert:
@@ -25,31 +24,18 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Lay thu trong tuan (0: Chu Nhat, 1: Thu 2, ..., 6: Thu 7) va gio theo UTC
-          DAY_OF_WEEK=$(date -u +"%w")
           HOUR_UTC=$(date -u +"%H")
-
-          # KIEM TRA GIO MO CUA THI TRUONG VANG:
-          # Dong cua: Tu 22h UTC Thu 6 (05h sang Thu 7 gio VN) den 22h UTC Chu Nhat (05h sang Thu 2 gio VN)
-          if [ "$DAY_OF_WEEK" -eq 6 ]; then
-            echo "Thu 7 (gio UTC) - Thi truong dong cua. Bo qua."
-            exit 0
-          fi
-
-          if [ "$DAY_OF_WEEK" -eq 0 ] && [ "$HOUR_UTC" -lt 22 ]; then
-            echo "Chu Nhat truoc 22h UTC - Thi truong chua mo cua. Bo qua."
-            exit 0
-          fi
-
-          if [ "$DAY_OF_WEEK" -eq 5 ] && [ "$HOUR_UTC" -ge 22 ]; then
-            echo "Sau 22h UTC Thu 6 - Thi truong da dong cua cuoi tuan. Bo qua."
-            exit 0
-          fi
-
           # Chay khung 4H neu trung gio dong nen (01, 05, 09, 13, 17, 21 UTC)
           if [ "$HOUR_UTC" = "01" ] || [ "$HOUR_UTC" = "05" ] || [ "$HOUR_UTC" = "09" ] || [ "$HOUR_UTC" = "13" ] || [ "$HOUR_UTC" = "17" ] || [ "$HOUR_UTC" = "21" ]; then
             python gold_bot.py 4H
           fi
-
-          # Luon chay khung 1H moi dau gio
+          # Luon chay khung 1H moi dau gio (va tu dong gui tong ket ngay luc 22h UTC / 05h sang VN)
           python gold_bot.py 1H
+
+      - name: Luu nhat ky lenh trong ngay
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add daily_trades.json || true
+          git commit -m "Auto update daily trade log [skip ci]" || exit 0
+          git push || true
