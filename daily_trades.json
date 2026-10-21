@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-21",
+  "single_mode": {
+    "current_trade": null,
+    "closed_trades": []
+  },
+  "multi_mode": {
+    "open_trades": [],
+    "closed_trades": []
+  }
+}
