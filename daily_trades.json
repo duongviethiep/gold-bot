@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-21",
+  "single_mode": {
+    "current_trade": {
+      "time": "12:18",
+      "type": "BUY",
+      "entry": 4137.74,
+      "sl": 4120.07,
+      "tp": 4161.3,
+      "status": "\u0110ang m\u1edf",
+      "pnl": 0.0
+    },
+    "closed_trades": []
+  },
+  "multi_mode": {
+    "open_trades": [
+      {
+        "time": "12:18",
+        "type": "BUY",
+        "entry": 4137.74,
+        "sl": 4120.07,
+        "tp": 4161.3,
+        "status": "\u0110ang m\u1edf",
+        "pnl": 0.0
+      }
+    ],
+    "closed_trades": []
+  }
+}
