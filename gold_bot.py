@@ -76,7 +76,114 @@ def fetch_gold_data(timeframe_str):
   }
 
 
-# ==================== BỘ QUẢN LÝ VÀ THEO DÕI LỆNH ====================
+# ==================== PHÂN TÍCH VÀ LẬP KẾ HOẠCH (KHÔNG MUA ĐUỔI) ====================
+def analyze_and_plan(d):
+  close, ema20, ema50 = d["close"], d["ema20"], d["ema50"]
+  rsi, macd, macd_sig = d["rsi"], d["macd"], d["macd_signal"]
+  adx, atr, vwap = d.get("adx", 0.0), d.get("atr", 0.0), d.get("vwap", 0.0)
+  low, high, bb_up = d["low"], d["high"], d["bb_upper"]
+  atr = atr if atr > 0 else 5.0
+
+  support = round(min(low, ema20) if ema20 > 0 else low, 2)
+  resistance = round(max(high, bb_up) if bb_up > 0 else high, 2)
+
+  # 1. Đánh giá xu hướng
+  if close > ema20 and ema20 > ema50:
+    trend = "Tăng (Giá vận động trên EMA20/50)"
+    action = "BUY"
+  elif close < ema20 and ema20 < ema50:
+    trend = "Giảm (Giá chịu áp lực dưới EMA20/50)"
+    action = "SELL"
+  else:
+    trend = "Sideway (Tích lũy giằng co quanh EMA20/50)"
+    action = "WAIT"
+
+  # 2. Động lượng & sức mạnh trend
+  mom_rsi = "Quá mua" if rsi > 70 else ("Quá bán" if rsi < 30 else "Ổn định")
+  adx_desc = (
+      "Trend mạnh" if adx >= 25 else ("Sideway/Yếu" if adx < 20 else "Trung bình")
+  )
+  momentum = (
+      f"RSI {rsi:.1f} ({mom_rsi}) | MACD {macd:.2f} | ADX {adx:.1f}"
+      f" ({adx_desc})"
+  )
+
+  # 3. Vùng cản kỹ thuật
+  levels = (
+      f"Hỗ trợ: {support:.2f} | Kháng cự: {resistance:.2f} | VWAP: {vwap:.2f}"
+  )
+
+  # 4. Kế hoạch vào lệnh (Chờ đón tại hỗ trợ/kháng cự, không mua/bán đuổi)
+  trade_plan = None
+  hour_utc = datetime.utcnow().strftime("%H")
+  is_near_close = hour_utc in ["20", "21", "22"]  # 2 tiếng cuối phiên không mở mới
+
+  if action == "BUY" and (adx >= 20 or rsi >= 50) and not is_near_close:
+    entry = support
+    sl = round(entry - 1.5 * atr, 2)
+    tp = round(entry + 2.0 * atr, 2)
+    plan = (
+        f"Canh Mua tại hỗ trợ <b>{entry:.2f}</b> (SL: <code>{sl:.2f}</code>, TP:"
+        f" <code>{tp:.2f}</code>)"
+    )
+    trade_plan = {"type": "BUY", "entry": entry, "sl": sl, "tp": tp}
+  elif action == "SELL" and (adx >= 20 or rsi < 50) and not is_near_close:
+    entry = resistance
+    sl = round(entry + 1.5 * atr, 2)
+    tp = round(entry - 2.0 * atr, 2)
+    plan = (
+        f"Canh Bán tại kháng cự <b>{entry:.2f}</b> (SL: <code>{sl:.2f}</code>,"
+        f" TP: <code>{tp:.2f}</code>)"
+    )
+    trade_plan = {"type": "SELL", "entry": entry, "sl": sl, "tp": tp}
+  else:
+    plan = "Đứng ngoài quan sát, thị trường đang sideway thiếu lực bứt phá."
+
+  text = (
+      f"• <b>Xu hướng:</b> {trend}\n"
+      f"• <b>Động lượng:</b> {momentum}\n"
+      f"• <b>Vùng cản:</b> {levels}\n"
+      f"• <b>Kế hoạch:</b> {plan}"
+  )
+  return text, trade_plan
+
+
+def generate_ai_analysis(data):
+  # Luôn tạo kế hoạch toán học chuẩn xác để bảo đảm không mua đuổi
+  text_plan, trade_plan = analyze_and_plan(data)
+
+  if not GEMINI_API_KEY:
+    return text_plan, trade_plan
+
+  prompt = f"""
+Bạn là chuyên gia phân tích kỹ thuật vàng (XAUUSD). Hãy viết nhận định CỰC KỲ NGẮN GỌN VÀ SÚC TÍCH (đúng 4 gạch đầu dòng ngắn, không giải thích dài dòng):
+• Xu hướng: [Ngắn gọn 1 câu về trend và EMA20/50]
+• Động lượng: [RSI {data['rsi']:.1f}, MACD {data['macd']:.2f}, ADX {data['adx']:.1f} nói lên xung lực gì]
+• Vùng cản: [Hỗ trợ: X | Kháng cự: Y | VWAP: {data['vwap']:.2f}]
+• Kế hoạch: [Canh mua tại hỗ trợ (SL, TP) HOẶC Canh bán tại kháng cự (SL, TP) HOẶC Đứng ngoài quan sát nếu sideway. Tuyệt đối không mua đuổi trên đỉnh / bán đuổi dưới đáy].
+"""
+  headers = {
+      "Content-Type": "application/json",
+      "x-goog-api-key": GEMINI_API_KEY,
+  }
+  payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+  try:
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
+    response = requests.post(url, json=payload, headers=headers, timeout=10)
+    res_json = response.json()
+    if "candidates" in res_json and len(res_json["candidates"]) > 0:
+      return (
+          res_json["candidates"][0]["content"]["parts"][0]["text"].strip(),
+          trade_plan,
+      )
+  except Exception:
+    pass
+
+  return text_plan, trade_plan
+
+
+# ==================== BỘ QUẢN LÝ LỆNH ĐÓN THÔNG MINH ====================
 def load_trades():
   today_str = datetime.now().strftime("%Y-%m-%d")
   if os.path.exists(TRADES_FILE):
@@ -102,54 +209,67 @@ def save_trades(data):
     print(f"Lỗi lưu file nhật ký lệnh: {e}")
 
 
-def update_trade_engine(market_data):
+def update_trade_engine(market_data, trade_plan):
   trades = load_trades()
-  high, low, close = (
-      market_data["high"],
-      market_data["low"],
-      market_data["close"],
-  )
-  atr = market_data["atr"] if market_data["atr"] > 0 else 5.0
+  high, low = market_data["high"], market_data["low"]
   time_now_str = datetime.now().strftime("%H:%M")
-  summary = market_data["summary"]
 
-  # 1. Cập nhật các lệnh đang mở (Kiểm tra xem nến vừa rồi có chạm TP/SL không)
+  # 1. Kiểm tra trạng thái các lệnh đã có
   def evaluate_trade(t):
-    if t["type"] == "BUY":
-      if high >= t["tp"] and low <= t["sl"]:
-        t["status"] = "Chạm SL"
-        t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-        return True
-      elif high >= t["tp"]:
-        t["status"] = "Đạt TP"
-        t["pnl"] = round(t["tp"] - t["entry"], 2)
-        return True
-      elif low <= t["sl"]:
-        t["status"] = "Chạm SL"
-        t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-        return True
-    elif t["type"] == "SELL":
-      if low <= t["tp"] and high >= t["sl"]:
-        t["status"] = "Chạm SL"
-        t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-        return True
-      elif low <= t["tp"]:
-        t["status"] = "Đạt TP"
-        t["pnl"] = round(t["entry"] - t["tp"], 2)
-        return True
-      elif high >= t["sl"]:
-        t["status"] = "Chạm SL"
-        t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-        return True
+    # Khớp lệnh chờ đón
+    if t["status"] == "Chờ đón":
+      if t["type"] == "BUY":
+        if low <= t["entry"]:
+          t["status"] = "Đang chạy"
+        elif high >= t["tp"]:
+          t["status"] = "Hụt lệnh"
+          t["pnl"] = 0.0
+          return True
+      elif t["type"] == "SELL":
+        if high >= t["entry"]:
+          t["status"] = "Đang chạy"
+        elif low <= t["tp"]:
+          t["status"] = "Hụt lệnh"
+          t["pnl"] = 0.0
+          return True
+
+    # Theo dõi chốt lời / cắt lỗ khi lệnh đang chạy
+    if t["status"] == "Đang chạy":
+      if t["type"] == "BUY":
+        if high >= t["tp"] and low <= t["sl"]:
+          t["status"] = "Chạm SL"
+          t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
+          return True
+        elif high >= t["tp"]:
+          t["status"] = "Đạt TP"
+          t["pnl"] = round(t["tp"] - t["entry"], 2)
+          return True
+        elif low <= t["sl"]:
+          t["status"] = "Chạm SL"
+          t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
+          return True
+      elif t["type"] == "SELL":
+        if low <= t["tp"] and high >= t["sl"]:
+          t["status"] = "Chạm SL"
+          t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
+          return True
+        elif low <= t["tp"]:
+          t["status"] = "Đạt TP"
+          t["pnl"] = round(t["entry"] - t["tp"], 2)
+          return True
+        elif high >= t["sl"]:
+          t["status"] = "Chạm SL"
+          t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
+          return True
     return False
 
-  # Kiểm tra chế độ Single
+  # Cập nhật Mục 1 (Single)
   curr_s = trades["single_mode"]["current_trade"]
   if curr_s and evaluate_trade(curr_s):
     trades["single_mode"]["closed_trades"].append(curr_s)
     trades["single_mode"]["current_trade"] = None
 
-  # Kiểm tra chế độ Multi
+  # Cập nhật Mục 2 (Multi)
   still_open_m = []
   for t in trades["multi_mode"]["open_trades"]:
     if evaluate_trade(t):
@@ -158,41 +278,23 @@ def update_trade_engine(market_data):
       still_open_m.append(t)
   trades["multi_mode"]["open_trades"] = still_open_m
 
-  # 2. Phát sinh lệnh mới theo tín hiệu
-  new_type = None
-  if summary in ["STRONG_BUY", "BUY"]:
-    new_type = "BUY"
-  elif summary in ["STRONG_SELL", "SELL"]:
-    new_type = "SELL"
-
-  if new_type:
-    sl = (
-        round(close - 1.5 * atr, 2)
-        if new_type == "BUY"
-        else round(close + 1.5 * atr, 2)
-    )
-    tp = (
-        round(close + 2.0 * atr, 2)
-        if new_type == "BUY"
-        else round(close - 2.0 * atr, 2)
-    )
-
-    new_trade_template = {
+  # 2. Nhận lệnh mới nếu có kế hoạch vào lệnh (Không vào lệnh khi sideway)
+  if trade_plan:
+    new_item = {
         "time": time_now_str,
-        "type": new_type,
-        "entry": close,
-        "sl": sl,
-        "tp": tp,
-        "status": "Đang mở",
+        "type": trade_plan["type"],
+        "entry": trade_plan["entry"],
+        "sl": trade_plan["sl"],
+        "tp": trade_plan["tp"],
+        "status": "Chờ đón",
         "pnl": 0.0,
     }
-
-    # Mục 1: Chỉ mở khi chưa có lệnh nào đang chạy
+    # Mục 1: Chỉ nhận khi chưa có lệnh nào đang chạy hoặc chờ
     if trades["single_mode"]["current_trade"] is None:
-      trades["single_mode"]["current_trade"] = dict(new_trade_template)
+      trades["single_mode"]["current_trade"] = dict(new_item)
 
-    # Mục 2: Luôn mở thêm 1 lệnh độc lập
-    trades["multi_mode"]["open_trades"].append(dict(new_trade_template))
+    # Mục 2: Mở thêm 1 lệnh chờ độc lập
+    trades["multi_mode"]["open_trades"].append(dict(new_item))
 
   save_trades(trades)
   return trades
@@ -201,18 +303,18 @@ def update_trade_engine(market_data):
 def build_daily_summary_message(trades, final_close):
   day_str = datetime.now().strftime("%d/%m/%Y")
 
-  # Thu gom toàn bộ lệnh trong ngày (đóng lệnh còn treo theo giá đóng cửa cuối phiên)
   def finalize_list(current, closed):
-    res = list(closed)
+    res = [t for t in closed if t["status"] != "Hụt lệnh"]
     if current:
       c = dict(current)
-      c["status"] = "Chốt phiên"
-      c["pnl"] = (
-          round(final_close - c["entry"], 2)
-          if c["type"] == "BUY"
-          else round(c["entry"] - final_close, 2)
-      )
-      res.append(c)
+      if c["status"] == "Đang chạy":
+        c["status"] = "Chốt phiên"
+        c["pnl"] = (
+            round(final_close - c["entry"], 2)
+            if c["type"] == "BUY"
+            else round(c["entry"] - final_close, 2)
+        )
+        res.append(c)
     return res
 
   s_list = finalize_list(
@@ -220,16 +322,19 @@ def build_daily_summary_message(trades, final_close):
       trades["single_mode"]["closed_trades"],
   )
 
-  m_list = list(trades["multi_mode"]["closed_trades"])
+  m_list = [
+      t for t in trades["multi_mode"]["closed_trades"] if t["status"] != "Hụt lệnh"
+  ]
   for t in trades["multi_mode"]["open_trades"]:
-    c = dict(t)
-    c["status"] = "Chốt phiên"
-    c["pnl"] = (
-        round(final_close - c["entry"], 2)
-        if c["type"] == "BUY"
-        else round(c["entry"] - final_close, 2)
-    )
-    m_list.append(c)
+    if t["status"] == "Đang chạy":
+      c = dict(t)
+      c["status"] = "Chốt phiên"
+      c["pnl"] = (
+          round(final_close - c["entry"], 2)
+          if c["type"] == "BUY"
+          else round(c["entry"] - final_close, 2)
+      )
+      m_list.append(c)
 
   def stats(t_list):
     tot = len(t_list)
@@ -244,7 +349,7 @@ def build_daily_summary_message(trades, final_close):
 
   def render_detail(t_list):
     if not t_list:
-      return "<i>• Không phát sinh tín hiệu lệnh trong ngày.</i>"
+      return "<i>• Không có lệnh khớp trong ngày (Thị trường sideway).</i>"
     lines = []
     for i, t in enumerate(t_list, 1):
       icon = "✅" if t["pnl"] > 0 else ("❌" if t["pnl"] < 0 else "⚪")
@@ -259,13 +364,12 @@ def build_daily_summary_message(trades, final_close):
   s_sign = "+" if s_pnl > 0 else ""
   m_sign = "+" if m_pnl > 0 else ""
 
-  msg = f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
+  return f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
 ⏱ <b>Ngày kết thúc:</b> {day_str} (Khối lượng: <code>0.01 lot</code>)
-🎯 <b>Quy tắc:</b> SL = 1.5 x ATR | TP = 2.0 x ATR
+🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | SL = 1.5 x ATR | TP = 2.0 x ATR
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>1️⃣ CHẾ ĐỘ 1 LỆNH DUY NHẤT (Single Position):</b>
-<i>(Chờ lệnh hiện tại chạm TP/SL mới nhận tín hiệu lệnh tiếp theo)</i>
 • <b>Tổng lệnh:</b> {s_tot} | <b>Thắng:</b> {s_win} ✅ | <b>Thua:</b> {s_loss} ❌ | <b>Tỷ lệ thắng:</b> {s_wr:.1f}%
 • <b>Tổng P&L:</b> <code>{s_sign}{s_pnl:.2f} USD</code> ({s_sign}{s_pnl*10:.0f} pips)
 
@@ -274,149 +378,15 @@ def build_daily_summary_message(trades, final_close):
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>2️⃣ CHẾ ĐỘ ĐA LỆNH ĐỘC LẬP (Multi Positions):</b>
-<i>(Mỗi cây nến có tín hiệu đều mở 1 lệnh riêng biệt)</i>
 • <b>Tổng lệnh:</b> {m_tot} | <b>Thắng:</b> {m_win} ✅ | <b>Thua:</b> {m_loss} ❌ | <b>Tỷ lệ thắng:</b> {m_wr:.1f}%
 • <b>Tổng P&L:</b> <code>{m_sign}{m_pnl:.2f} USD</code> ({m_sign}{m_pnl*10:.0f} pips)
 
 <b>Chi tiết lệnh:</b>
 {render_detail(m_list)}
 """
-  return msg
 
 
-# ==================== PHÂN TÍCH VÀ GỬI TIN ====================
-def build_fallback_analysis(d):
-  close, ema20, ema50, ema200 = d["close"], d["ema20"], d["ema50"], d["ema200"]
-  rsi, macd, macd_sig = d["rsi"], d["macd"], d["macd_signal"]
-  adx, atr, vwap = d.get("adx", 0.0), d.get("atr", 0.0), d.get("vwap", 0.0)
-  low, high, bb_up = d["low"], d["high"], d["bb_upper"]
-
-  if close > ema20 and ema20 > ema50:
-    trend = (
-        f"Xu hướng tăng ngắn hạn duy trì tích cực khi giá ({close:.2f}) nằm"
-        f" trên dải EMA20 ({ema20:.2f}) và EMA50 ({ema50:.2f})."
-    )
-  elif close < ema20 and ema20 < ema50:
-    trend = (
-        f"Xu hướng giảm ngắn hạn chiếm ưu thế khi giá ({close:.2f}) chịu áp lực"
-        f" cản dưới EMA20 ({ema20:.2f}) và EMA50 ({ema50:.2f})."
-    )
-  else:
-    trend = (
-        f"Thị trường đang tích lũy giằng co quanh vùng hội tụ EMA20"
-        f" ({ema20:.2f}) và EMA50 ({ema50:.2f})."
-    )
-
-  adx_str = (
-      f"Chỉ số ADX ({adx:.1f}) > 25 xác nhận xu hướng đang rất mạnh."
-      if adx >= 25
-      else (
-          f"Chỉ số ADX ({adx:.1f}) < 20 cho thấy thị trường đang sideway giằng"
-          " co."
-          if adx > 0
-          else ""
-      )
-  )
-  mom_rsi = (
-      f"RSI ({rsi:.1f}) chạm vùng quá mua."
-      if rsi > 70
-      else (
-          f"RSI ({rsi:.1f}) vào vùng quá bán."
-          if rsi < 30
-          else f"RSI ({rsi:.1f}) ở mức trung tính ổn định."
-      )
-  )
-  mom_macd = (
-      f"Đường MACD ({macd:.2f}) nằm trên Signal ({macd_sig:.2f}) củng cố lực"
-      " mua."
-      if macd > macd_sig
-      else (
-          f"Đường MACD ({macd:.2f}) dưới Signal ({macd_sig:.2f}) cho thấy lực"
-          " mua suy yếu."
-      )
-  )
-  momentum = f"{mom_rsi} {mom_macd} {adx_str}".strip()
-
-  support = min(low, ema20) if ema20 > 0 else low
-  resistance = max(high, bb_up) if bb_up > 0 else high
-  vwap_str = (
-      f" Giá đang ở {'trên' if close >= vwap else 'dưới'} mốc trung bình dòng"
-      f" tiền ({vwap:.2f} USD)."
-      if vwap > 0
-      else ""
-  )
-  sr = (
-      f"Hỗ trợ gần nhất quanh {support:.2f} USD; kháng cự cần vượt là"
-      f" {resistance:.2f} USD.{vwap_str}"
-  )
-
-  atr_str = (
-      f" (Biên độ dao động ATR ~{atr:.2f} USD, gợi ý khoảng cắt lỗ an toàn"
-      f" ~{1.5*atr:.2f} USD)."
-      if atr > 0
-      else "."
-  )
-  if close > ema20 and rsi >= 50 and macd > macd_sig:
-    scenario = (
-        "Ưu tiên canh mua thuận xu hướng khi giá hồi về kiểm định vùng"
-        f" {support:.2f} USD, mục tiêu hướng tới {resistance:.2f} USD{atr_str}"
-    )
-  elif close < ema20 and rsi < 50:
-    scenario = (
-        f"Ưu tiên canh bán lướt sóng nếu giá hồi lên vùng cản {ema20:.2f} USD"
-        f" nhưng suy yếu{atr_str}"
-    )
-  else:
-    scenario = (
-        f"Giá đang dao động tích lũy trong vùng {support:.2f} -"
-        f" {resistance:.2f} USD, khuyến nghị chờ tín hiệu phá vỡ rõ ràng{atr_str}"
-    )
-
-  return f"• {trend}\n• {momentum}\n• {sr}\n• {scenario}"
-
-
-def generate_ai_analysis(data):
-  if not GEMINI_API_KEY:
-    return build_fallback_analysis(data)
-
-  prompt = f"""
-Bạn là chuyên gia phân tích kỹ thuật thị trường vàng (XAUUSD). Hãy viết nhận định ngắn gọn dựa trên các thông số nến vừa đóng khung {data['timeframe']}:
-- Giá đóng cửa: {data['close']:.2f} (Biên độ: {data['low']:.2f} - {data['high']:.2f})
-- RSI (14): {data['rsi']:.2f} | ADX (14): {data['adx']:.2f}
-- MACD: {data['macd']:.2f} (Signal: {data['macd_signal']:.2f})
-- Đường xu hướng: EMA20={data['ema20']:.2f}, EMA50={data['ema50']:.2f}, EMA200={data['ema200']:.2f}
-- Dải Bollinger: {data['bb_lower']:.2f} - {data['bb_upper']:.2f}
-- Biến động & Dòng tiền: ATR={data['atr']:.2f} USD, VWAP/VWMA={data['vwap']:.2f} USD
-- Tín hiệu tổng quan: {data['summary']}
-
-Trình bày đúng 4 gạch đầu dòng ngắn gọn:
-1. Đánh giá cấu trúc xu hướng và vị thế giá so với các đường EMA.
-2. Trạng thái động lượng và sức mạnh xu hướng (kết hợp RSI, MACD và ADX).
-3. Vị thế dòng tiền so với VWAP cùng các vùng hỗ trợ/kháng cự trọng yếu.
-4. Kịch bản xu hướng tiếp theo và khoảng cách dừng lỗ/chốt lời gợi ý theo ATR.
-Không dùng lời chào hỏi, đi thẳng vào các gạch đầu dòng.
-"""
-
-  headers = {
-      "Content-Type": "application/json",
-      "x-goog-api-key": GEMINI_API_KEY,
-  }
-  payload = {"contents": [{"parts": [{"text": prompt}]}]}
-
-  models = ["gemini-2.5-flash-lite", "gemini-3.8-flash"]
-  for model_name in models:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
-    try:
-      response = requests.post(url, json=payload, headers=headers, timeout=12)
-      res_json = response.json()
-      if "candidates" in res_json and len(res_json["candidates"]) > 0:
-        return res_json["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except Exception:
-      pass
-
-  return build_fallback_analysis(data)
-
-
+# ==================== GỬI THÔNG BÁO TELEGRAM ====================
 def send_telegram_raw(text):
   url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
   chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(",") if cid.strip()]
@@ -437,7 +407,6 @@ def send_telegram_raw(text):
 
 def send_telegram(data, ai_opinion):
   time_now = datetime.now().strftime("%d/%m/%Y %H:%M")
-  safe_opinion = html.escape(ai_opinion)
 
   message_html = f"""📊 <b>BÁO CÁO GIÁ VÀNG XAU/USD ({data['timeframe']})</b>
 ⏱ <b>Thời điểm đóng nến:</b> {time_now}
@@ -454,7 +423,7 @@ def send_telegram(data, ai_opinion):
 • Tín hiệu kỹ thuật: <b>{data['summary']}</b>
 
 🧠 <b>Nhận định & Phân tích chuyên sâu:</b>
-{safe_opinion}
+{ai_opinion}
 """
   send_telegram_raw(message_html)
 
@@ -464,27 +433,21 @@ if __name__ == "__main__":
   market_data = fetch_gold_data(tf)
 
   if tf == "1H":
-    # 1. Cập nhật nhật ký lệnh theo nến 1H
-    trade_state = update_trade_engine(market_data)
-
-    # 2. Gửi báo cáo nến 1H định kỳ
-    analysis_text = generate_ai_analysis(market_data)
+    analysis_text, trade_plan = generate_ai_analysis(market_data)
+    trade_state = update_trade_engine(market_data, trade_plan)
     send_telegram(market_data, analysis_text)
 
-    # 3. Kiểm tra xem có đúng mốc 05:00 sáng VN (tức 22:00 UTC - kết phiên Mỹ) để gửi tổng kết ngày không
     hour_utc = datetime.utcnow().strftime("%H")
     if hour_utc == "22" or (len(sys.argv) > 2 and sys.argv[2] == "summary"):
       summary_card = build_daily_summary_message(
           trade_state, market_data["close"]
       )
       send_telegram_raw(summary_card)
-      # Xóa file nhật ký để ngày mới bắt đầu lại từ đầu
       if os.path.exists(TRADES_FILE):
         try:
           os.remove(TRADES_FILE)
         except Exception:
           pass
   else:
-    # Báo cáo khung 4H
-    analysis_text = generate_ai_analysis(market_data)
+    analysis_text, _ = generate_ai_analysis(market_data)
     send_telegram(market_data, analysis_text)
