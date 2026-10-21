@@ -22,6 +22,15 @@
         "tp": 4161.3,
         "status": "\u0110ang m\u1edf",
         "pnl": 0.0
+      },
+      {
+        "time": "13:01",
+        "type": "BUY",
+        "entry": 4135.21,
+        "sl": 4117.09,
+        "tp": 4159.36,
+        "status": "\u0110ang m\u1edf",
+        "pnl": 0.0
       }
     ],
     "closed_trades": []
