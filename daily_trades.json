@@ -2,26 +2,47 @@
   "date": "2026-10-21",
   "single_mode": {
     "current_trade": {
-      "time": "12:18",
-      "type": "BUY",
-      "entry": 4137.74,
-      "sl": 4120.07,
-      "tp": 4161.3,
+      "time": "19:01",
+      "type": "SELL",
+      "entry": 4112.665,
+      "sl": 4131.77,
+      "tp": 4087.19,
       "status": "\u0110ang m\u1edf",
       "pnl": 0.0
     },
-    "closed_trades": []
-  },
-  "multi_mode": {
-    "open_trades": [
+    "closed_trades": [
       {
         "time": "12:18",
         "type": "BUY",
         "entry": 4137.74,
         "sl": 4120.07,
         "tp": 4161.3,
+        "status": "Ch\u1ea1m SL",
+        "pnl": -17.67
+      }
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [
+      {
+        "time": "19:01",
+        "type": "SELL",
+        "entry": 4112.665,
+        "sl": 4131.77,
+        "tp": 4087.19,
         "status": "\u0110ang m\u1edf",
         "pnl": 0.0
+      }
+    ],
+    "closed_trades": [
+      {
+        "time": "12:18",
+        "type": "BUY",
+        "entry": 4137.74,
+        "sl": 4120.07,
+        "tp": 4161.3,
+        "status": "Ch\u1ea1m SL",
+        "pnl": -17.67
       },
       {
         "time": "13:01",
@@ -29,8 +50,8 @@
         "entry": 4135.21,
         "sl": 4117.09,
         "tp": 4159.36,
-        "status": "\u0110ang m\u1edf",
-        "pnl": 0.0
+        "status": "Ch\u1ea1m SL",
+        "pnl": -18.12
       },
       {
         "time": "18:01",
@@ -38,10 +59,9 @@
         "entry": 4136.54,
         "sl": 4119.12,
         "tp": 4159.77,
-        "status": "\u0110ang m\u1edf",
-        "pnl": 0.0
+        "status": "Ch\u1ea1m SL",
+        "pnl": -17.42
       }
-    ],
-    "closed_trades": []
+    ]
   }
 }
