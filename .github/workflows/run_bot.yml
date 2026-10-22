@@ -23,6 +23,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TRADINGVIEW_SESSION_ID: ${{ secrets.TRADINGVIEW_SESSION_ID }}
         run: |
           HOUR_UTC=$(date -u +"%H")
           if [ "$HOUR_UTC" = "01" ] || [ "$HOUR_UTC" = "05" ] || [ "$HOUR_UTC" = "09" ] || [ "$HOUR_UTC" = "13" ] || [ "$HOUR_UTC" = "17" ] || [ "$HOUR_UTC" = "21" ]; then
