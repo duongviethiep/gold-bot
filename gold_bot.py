@@ -2,117 +2,18 @@ from datetime import datetime
 import html
 import json
 import os
-import random
-import re
-import string
 import sys
 import requests
 from tradingview_ta import Interval, TA_Handler
-import websocket
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TRADES_FILE = "daily_trades.json"
 
-SYMBOL_FULL = "PEPPERSTONE:XAUUSD"
-
-
-# ==================== KẾT NỐI WEBSOCKET GỐC CỦA TRADINGVIEW ====================
-def generate_tv_session():
-  return "cs_" + "".join(
-      random.choice(string.ascii_lowercase) for _ in range(12)
-  )
-
-
-def create_tv_message(func, param_list):
-  st = json.dumps({"m": func, "p": param_list})
-  return f"~m~{len(st)}~m~{st}"
-
-
-def fetch_tradingview_direct_bars(timeframe="60", n_bars=5):
-  """Kết nối trực tiếp vào máy chủ biểu đồ wss://data.tradingview.com để lấy mảng nến thật 100% của sàn Pepperstone."""
-  try:
-    ws = websocket.create_connection(
-        "wss://data.tradingview.com/socket.io/websocket",
-        headers={"Origin": "https://data.tradingview.com"},
-        timeout=10,
-    )
-
-    chart_session = generate_tv_session()
-    ws.send(create_tv_message("set_auth_token", ["unauthorized_user_token"]))
-    ws.send(create_tv_message("chart_create_session", [chart_session, ""]))
-
-    resolve_param = json.dumps({"symbol": SYMBOL_FULL, "adjustment": "splits"})
-    ws.send(
-        create_tv_message(
-            "resolve_symbol", [chart_session, "sds_sym_1", resolve_param]
-        )
-    )
-    ws.send(
-        create_tv_message(
-            "create_series",
-            [chart_session, "sds_1", "s1", "sds_sym_1", str(timeframe), n_bars],
-        )
-    )
-
-    pattern = r"~m~\d+~m~"
-    for _ in range(20):
-      raw = ws.recv()
-      msgs = [m for m in re.split(pattern, raw) if m.strip()]
-      for msg in msgs:
-        try:
-          data = json.loads(msg)
-          if data.get("m") == "timescale_update":
-            ws.close()
-            return data["p"][1]["s1"]["s"]
-        except Exception:
-          pass
-    ws.close()
-  except Exception as e:
-    print(f"Lỗi kết nối TradingView WebSocket: {e}")
-  return None
-
-
-def fetch_completed_candle_tradingview(timeframe_str):
-  """Lấy chính xác cây nến vừa đóng hoàn toàn (n-1) trực tiếp từ TradingView."""
-  tf_code = "60" if timeframe_str == "1H" else "240"
-  series = fetch_tradingview_direct_bars(tf_code, n_bars=5)
-  if series and len(series) >= 2:
-    # series[-1] là nến đang chạy (1 phút)
-    # series[-2] là CÂY NẾN VỪA ĐÓNG HOÀN TOÀN TRÊN BIỂU ĐỒ TRADINGVIEW!
-    c = series[-2]["v"]
-    o, h, l, close_p, vol = (
-        float(c[1]),
-        float(c[2]),
-        float(c[3]),
-        float(c[4]),
-        float(c[5]),
-    )
-    chg = round((close_p - o) / o * 100, 2)
-    return {
-        "open": o,
-        "high": h,
-        "low": l,
-        "close": close_p,
-        "volume": vol,
-        "change": chg,
-    }
-  return None
-
-
-def fetch_1m_bars_tradingview():
-  """Lấy 60 nến 1 phút trực tiếp từ TradingView để dò TP/SL chuẩn xác từng phút."""
-  series = fetch_tradingview_direct_bars("1", n_bars=65)
-  if series and len(series) >= 10:
-    bars = []
-    # Bỏ nến cuối đang chạy, lấy 60 nến của tiếng vừa qua
-    for item in series[-62:-1]:
-      b = item["v"]
-      t_str = datetime.fromtimestamp(b[0]).strftime("%H:%M")
-      bars.append((t_str, float(b[1]), float(b[2]), float(b[3]), float(b[4])))
-    return bars
-  return None
+SYMBOL = "XAUUSD"
+EXCHANGE = "PEPPERSTONE"
+SCREENER = "cfd"
 
 
 def fetch_gold_data(timeframe_str):
@@ -123,9 +24,9 @@ def fetch_gold_data(timeframe_str):
   selected_interval = interval_map.get(timeframe_str, Interval.INTERVAL_1_HOUR)
 
   handler = TA_Handler(
-      symbol="XAUUSD",
-      exchange="PEPPERSTONE",
-      screener="cfd",
+      symbol=SYMBOL,
+      exchange=EXCHANGE,
+      screener=SCREENER,
       interval=selected_interval,
   )
   handler.add_indicators(["ATR", "VWAP"])
@@ -138,7 +39,7 @@ def fetch_gold_data(timeframe_str):
 
   vwap_val = ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0)
 
-  base_data = {
+  return {
       "timeframe": timeframe_str,
       "close": ind.get("close", 0.0),
       "open": ind.get("open", 0.0),
@@ -159,18 +60,6 @@ def fetch_gold_data(timeframe_str):
       "bb_lower": ind.get("BB.lower", 0.0),
       "summary": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
   }
-
-  # Lấy đúng cây nến vừa đóng trực tiếp từ biểu đồ TradingView
-  completed = fetch_completed_candle_tradingview(timeframe_str)
-  if completed:
-    base_data["open"] = completed["open"]
-    base_data["high"] = completed["high"]
-    base_data["low"] = completed["low"]
-    base_data["close"] = completed["close"]
-    base_data["change"] = completed["change"]
-    base_data["volume"] = completed["volume"]
-
-  return base_data
 
 
 # ==================== PHÂN TÍCH VÀ LẬP KẾ HOẠCH ====================
@@ -292,7 +181,7 @@ Bạn là chuyên gia phân tích kỹ thuật vàng (XAUUSD). Hãy viết nhậ
   return text_plan, trade_plan
 
 
-# ==================== BỘ QUẢN LÝ LỆNH DÒ NẾN 1 PHÚT ====================
+# ==================== BỘ QUẢN LÝ LỆNH VÀ LƯU VẾT NẾN ====================
 def load_trades():
   today_str = datetime.now().strftime("%Y-%m-%d")
   if os.path.exists(TRADES_FILE):
@@ -305,6 +194,7 @@ def load_trades():
       pass
   return {
       "date": today_str,
+      "last_candle": None,
       "single_mode": {"current_trade": None, "closed_trades": []},
       "multi_mode": {"open_trades": [], "closed_trades": []},
   }
@@ -320,50 +210,10 @@ def save_trades(data):
 
 def update_trade_engine(market_data, trade_plan):
   trades = load_trades()
+  high, low = market_data["high"], market_data["low"]
   time_now_str = datetime.now().strftime("%H:%M")
-  m1_bars = fetch_1m_bars_tradingview()
 
   def evaluate_trade(t):
-    if m1_bars and len(m1_bars) >= 5:
-      for t_time, o, h, l, c in m1_bars:
-        if t["status"] == "Chờ đón":
-          if t["type"] == "BUY":
-            if l <= t["entry"]:
-              t["status"] = "Đang chạy"
-            elif h >= t["tp"]:
-              t["status"] = "Hụt lệnh"
-              t["pnl"] = 0.0
-              return True
-          elif t["type"] == "SELL":
-            if h >= t["entry"]:
-              t["status"] = "Đang chạy"
-            elif l <= t["tp"]:
-              t["status"] = "Hụt lệnh"
-              t["pnl"] = 0.0
-              return True
-
-        if t["status"] == "Đang chạy":
-          if t["type"] == "BUY":
-            if h >= t["tp"]:
-              t["status"] = f"Đạt TP lúc {t_time}"
-              t["pnl"] = round(t["tp"] - t["entry"], 2)
-              return True
-            elif l <= t["sl"]:
-              t["status"] = f"Chạm SL lúc {t_time}"
-              t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-              return True
-          elif t["type"] == "SELL":
-            if l <= t["tp"]:
-              t["status"] = f"Đạt TP lúc {t_time}"
-              t["pnl"] = round(t["entry"] - t["tp"], 2)
-              return True
-            elif h >= t["sl"]:
-              t["status"] = f"Chạm SL lúc {t_time}"
-              t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-              return True
-      return False
-
-    high, low = market_data["high"], market_data["low"]
     if t["status"] == "Chờ đón":
       if t["type"] == "BUY":
         if low <= t["entry"]:
@@ -437,6 +287,13 @@ def update_trade_engine(market_data, trade_plan):
 
     trades["multi_mode"]["open_trades"].append(dict(new_item))
 
+  # Lưu lại vết nến của phiên này
+  trades["last_candle"] = {
+      "open": market_data["open"],
+      "high": market_data["high"],
+      "low": market_data["low"],
+      "close": market_data["close"],
+  }
   save_trades(trades)
   return trades
 
@@ -507,7 +364,7 @@ def build_daily_summary_message(trades, final_close):
 
   return f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
 ⏱ <b>Ngày kết thúc:</b> {day_str} (Khối lượng: <code>0.01 lot</code>)
-🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Dò nến 1m TradingView | SL = 1.5 x ATR | TP = 2.0 x ATR
+🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | SL = 1.5 x ATR | TP = 2.0 x ATR
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>1️⃣ CHẾ ĐỘ 1 LỆNH DUY NHẤT (Single Position):</b>
