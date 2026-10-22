@@ -1,43 +1,41 @@
-name: Auto Gold Bot
+name: XAUUSD Hourly Gold Bot
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '1 * * * *'
 
 jobs:
-  run-alert:
+  run-bot:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Tai ma nguon
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cai dat Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      - name: Cai dat Playwright Chromium
+      - name: Install Dependencies
         run: |
-          pip install requests tradingview-ta playwright
-          playwright install chromium --with-deps
+          pip install requests
 
-      - name: Chay bao cao gia vang
+      - name: Run Gold Bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TRADINGVIEW_SESSION_ID: ${{ secrets.TRADINGVIEW_SESSION_ID }}
+          CAPITAL_API_KEY: ${{ secrets.CAPITAL_API_KEY }}
+          CAPITAL_IDENTIFIER: ${{ secrets.CAPITAL_IDENTIFIER }}
+          CAPITAL_PASSWORD: ${{ secrets.CAPITAL_PASSWORD }}
         run: |
-          HOUR_UTC=$(date -u +"%H")
-          if [ "$HOUR_UTC" = "01" ] || [ "$HOUR_UTC" = "05" ] || [ "$HOUR_UTC" = "09" ] || [ "$HOUR_UTC" = "13" ] || [ "$HOUR_UTC" = "17" ] || [ "$HOUR_UTC" = "21" ]; then
-            python gold_bot.py 4H
-          fi
-          python gold_bot.py 1H
+          python gold_bot.py
 
-      - name: Luu nhat ky lenh trong ngay
+      - name: Commit and Push Updated Journal
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git pull --rebase || true
-          git add daily_trades.json || true
-          git commit -m "Auto update daily trade log [skip ci]" || exit 0
-          git push || true
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add daily_trades.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update daily trades journal [skip ci]" && git push)
