@@ -1,11 +1,29 @@
 {
-  "date": "2026-10-21",
+  "date": "2026-10-22",
   "single_mode": {
-    "current_trade": null,
+    "current_trade": {
+      "time": "00:01",
+      "type": "SELL",
+      "entry": 4143.16,
+      "sl": 4162.72,
+      "tp": 4117.08,
+      "status": "Ch\u1edd \u0111\u00f3n",
+      "pnl": 0.0
+    },
     "closed_trades": []
   },
   "multi_mode": {
-    "open_trades": [],
+    "open_trades": [
+      {
+        "time": "00:01",
+        "type": "SELL",
+        "entry": 4143.16,
+        "sl": 4162.72,
+        "tp": 4117.08,
+        "status": "Ch\u1edd \u0111\u00f3n",
+        "pnl": 0.0
+      }
+    ],
     "closed_trades": []
   }
 }
