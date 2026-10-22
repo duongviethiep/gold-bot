@@ -2,148 +2,197 @@ from datetime import datetime
 import html
 import json
 import os
-import random
-import re
-import string
 import sys
 import requests
 from tradingview_ta import Interval, TA_Handler
-import websocket
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-TRADINGVIEW_SESSION_ID = os.environ.get("TRADINGVIEW_SESSION_ID", "")
+TWELVE_DATA_API_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
 TRADES_FILE = "daily_trades.json"
 
-SYMBOL_FULL = "PEPPERSTONE:XAUUSD"
 
+# ==================== TÍNH TOÁN CHỈ BÁO KỸ THUẬT NỘI BỘ ====================
+def calc_technical_indicators(candles):
+  closes = [c["close"] for c in candles]
 
-# ==================== KẾT NỐI WEBSOCKET CHÍNH CHỦ TRADINGVIEW ====================
-def generate_tv_session():
-  return "cs_" + "".join(
-      random.choice(string.ascii_lowercase) for _ in range(12)
-  )
+  def calc_ema(series, period):
+    if len(series) < period:
+      return series[-1]
+    m = 2 / (period + 1)
+    ema = sum(series[:period]) / period
+    for val in series[period:]:
+      ema = (val - ema) * m + ema
+    return ema
 
+  def calc_rsi(series, period=14):
+    if len(series) <= period:
+      return 50.0
+    gains = [max(series[i] - series[i - 1], 0) for i in range(1, len(series))]
+    losses = [max(series[i - 1] - series[i], 0) for i in range(1, len(series))]
+    avg_g = sum(gains[:period]) / period
+    avg_l = sum(losses[:period]) / period
+    for i in range(period, len(gains)):
+      avg_g = (avg_g * (period - 1) + gains[i]) / period
+      avg_l = (avg_l * (period - 1) + losses[i]) / period
+    if avg_l == 0:
+      return 100.0
+    return 100 - (100 / (1 + avg_g / avg_l))
 
-def create_tv_message(func, param_list):
-  st = json.dumps({"m": func, "p": param_list})
-  return f"~m~{len(st)}~m~{st}"
-
-
-def fetch_tradingview_direct_bars(timeframe="60", n_bars=5):
-  """Kết nối vào wss://data.tradingview.com với sessionid chính chủ của anh."""
-  if not TRADINGVIEW_SESSION_ID:
-    print("Cảnh báo: Chưa tìm thấy TRADINGVIEW_SESSION_ID trong Secrets!")
-    return None
-
-  try:
-    # Sửa đúng chuẩn tham số origin và cookie của thư viện websocket-client
-    ws = websocket.create_connection(
-        "wss://data.tradingview.com/socket.io/websocket",
-        origin="https://www.tradingview.com",
-        cookie=f"sessionid={TRADINGVIEW_SESSION_ID}",
-        timeout=10,
-    )
-
-    chart_session = generate_tv_session()
-    ws.send(create_tv_message("set_auth_token", ["unauthorized_user_token"]))
-    ws.send(create_tv_message("chart_create_session", [chart_session, ""]))
-
-    resolve_param = json.dumps({"symbol": SYMBOL_FULL, "adjustment": "splits"})
-    ws.send(
-        create_tv_message(
-            "resolve_symbol", [chart_session, "sds_sym_1", resolve_param]
+  def calc_atr(candles, period=14):
+    if len(candles) <= period:
+      return abs(candles[-1]["high"] - candles[-1]["low"])
+    trs = [
+        max(
+            candles[i]["high"] - candles[i]["low"],
+            abs(candles[i]["high"] - candles[i - 1]["close"]),
+            abs(candles[i]["low"] - candles[i - 1]["close"]),
         )
+        for i in range(1, len(candles))
+    ]
+    atr = sum(trs[:period]) / period
+    for i in range(period, len(trs)):
+      atr = (atr * (period - 1) + trs[i]) / period
+    return atr
+
+  def calc_macd(series):
+    ema12 = calc_ema(series, 12)
+    ema26 = calc_ema(series, 26)
+    macd = ema12 - ema26
+    signal = macd * 0.8
+    return macd, signal
+
+  def calc_adx(candles, period=14):
+    if len(candles) <= period:
+      return 25.0
+    trs, p_dm, m_dm = [], [], []
+    for i in range(1, len(candles)):
+      h, l = candles[i]["high"], candles[i]["low"]
+      ph, pl, pc = (
+          candles[i - 1]["high"],
+          candles[i - 1]["low"],
+          candles[i - 1]["close"],
+      )
+      trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+      up, down = h - ph, pl - l
+      p_dm.append(up if up > down and up > 0 else 0)
+      m_dm.append(down if down > up and down > 0 else 0)
+    tr_s = sum(trs[:period])
+    p_s = sum(p_dm[:period])
+    m_s = sum(m_dm[:period])
+    for i in range(period, len(trs)):
+      tr_s = tr_s - (tr_s / period) + trs[i]
+      p_s = p_s - (p_s / period) + p_dm[i]
+      m_s = m_s - (m_s / period) + m_dm[i]
+    p_di = 100 * (p_s / tr_s) if tr_s > 0 else 0
+    m_di = 100 * (m_s / tr_s) if tr_s > 0 else 0
+    return (
+        100 * abs(p_di - m_di) / (p_di + m_di)
+        if (p_di + m_di) > 0
+        else 20.0
     )
-    ws.send(
-        create_tv_message(
-            "create_series",
-            [chart_session, "sds_1", "s1", "sds_sym_1", str(timeframe), n_bars],
-        )
+
+  def calc_vwap(candles):
+    cum_pv = sum(
+        ((c["high"] + c["low"] + c["close"]) / 3) * c["volume"] for c in candles
     )
+    cum_v = sum(c["volume"] for c in candles)
+    return cum_pv / cum_v if cum_v > 0 else candles[-1]["close"]
 
-    pattern = r"~m~\d+~m~"
-    for _ in range(25):
-      raw = ws.recv()
-      msgs = [m for m in re.split(pattern, raw) if m.strip()]
-      for msg in msgs:
-        try:
-          data = json.loads(msg)
-          if data.get("m") == "timescale_update":
-            ws.close()
-            return data["p"][1]["s1"]["s"]
-        except Exception:
-          pass
-    ws.close()
-  except Exception as e:
-    print(f"Lỗi kết nối TradingView WebSocket: {e}")
-  return None
-
-
-def fetch_completed_candle_tradingview(timeframe_str):
-  """Lấy chính xác cây nến vừa đóng hoàn toàn (n-1) từ máy chủ TradingView."""
-  tf_code = "60" if timeframe_str == "1H" else "240"
-  series = fetch_tradingview_direct_bars(tf_code, n_bars=5)
-  if series and len(series) >= 2:
-    # series[-2] là cây nến vừa đóng xong 100% trên biểu đồ
-    c = series[-2]["v"]
-    o, h, l, close_p, vol = (
-        float(c[1]),
-        float(c[2]),
-        float(c[3]),
-        float(c[4]),
-        float(c[5]),
-    )
-    chg = round((close_p - o) / o * 100, 2)
-    return {
-        "open": o,
-        "high": h,
-        "low": l,
-        "close": close_p,
-        "volume": vol,
-        "change": chg,
-    }
-  return None
-
-
-def fetch_1m_bars_tradingview():
-  """Lấy 60 nến 1 phút trực tiếp từ TradingView để dò TP/SL chuẩn xác từng phút."""
-  series = fetch_tradingview_direct_bars("1", n_bars=65)
-  if series and len(series) >= 10:
-    bars = []
-    for item in series[-62:-1]:
-      b = item["v"]
-      t_str = datetime.fromtimestamp(b[0]).strftime("%H:%M")
-      bars.append((t_str, float(b[1]), float(b[2]), float(b[3]), float(b[4])))
-    return bars
-  return None
-
-
-def fetch_gold_data(timeframe_str):
-  interval_map = {
-      "1H": Interval.INTERVAL_1_HOUR,
-      "4H": Interval.INTERVAL_4_HOURS,
+  return {
+      "ema20": calc_ema(closes, 20),
+      "ema50": calc_ema(closes, 50),
+      "ema200": calc_ema(closes, 200),
+      "rsi": calc_rsi(closes),
+      "atr": calc_atr(candles),
+      "macd": calc_macd(closes)[0],
+      "macd_signal": calc_macd(closes)[1],
+      "adx": calc_adx(candles),
+      "vwap": calc_vwap(candles),
   }
-  selected_interval = interval_map.get(timeframe_str, Interval.INTERVAL_1_HOUR)
 
+
+# ==================== LẤY NẾN ĐÃ ĐÓNG TỪ TWELVE DATA ====================
+def fetch_gold_data(timeframe_str):
+  tf_api = "1h" if timeframe_str == "1H" else "4h"
+
+  if TWELVE_DATA_API_KEY:
+    try:
+      url = f"https://api.twelvedata.com/time_series?symbol=XAU/USD&interval={tf_api}&outputsize=50&apikey={TWELVE_DATA_API_KEY}"
+      res = requests.get(url, timeout=10)
+      data = res.json()
+      if data.get("status") == "ok" and "values" in data:
+        vals = data["values"]
+        if len(vals) >= 2:
+          # vals[0] là nến đang chạy, vals[1] là CÂY NẾN VỪA ĐÓNG HOÀN TOÀN!
+          cb = vals[1]
+          o = float(cb["open"])
+          h = float(cb["high"])
+          l = float(cb["low"])
+          c = float(cb["close"])
+          v = float(cb.get("volume", 0) or 0)
+          chg = round((c - o) / o * 100, 2)
+
+          # Chuẩn bị chuỗi nến quá khứ (sắp xếp từ cũ đến mới) để tính chỉ báo chuẩn
+          candles_history = []
+          for row in reversed(vals[1:]):
+            candles_history.append({
+                "open": float(row["open"]),
+                "high": float(row["high"]),
+                "low": float(row["low"]),
+                "close": float(row["close"]),
+                "volume": float(row.get("volume", 0) or 0),
+            })
+
+          ind = calc_technical_indicators(candles_history)
+
+          # Đánh giá tín hiệu tổng quan
+          summary = "NEUTRAL"
+          if c > ind["ema20"] and ind["ema20"] > ind["ema50"] and ind["rsi"] >= 50:
+            summary = "BUY"
+          elif (
+              c < ind["ema20"] and ind["ema20"] < ind["ema50"] and ind["rsi"] < 50
+          ):
+            summary = "SELL"
+
+          print(
+              f"-> THÀNH CÔNG: Đã lấy nến vừa đóng XAU/USD: O={o}, H={h}, L={l},"
+              f" C={c}, Range={h-l:.2f} USD"
+          )
+          return {
+              "timeframe": timeframe_str,
+              "close": c,
+              "open": o,
+              "high": h,
+              "low": l,
+              "change": chg,
+              "volume": v,
+              "rsi": ind["rsi"],
+              "macd": ind["macd"],
+              "macd_signal": ind["macd_signal"],
+              "adx": ind["adx"],
+              "atr": ind["atr"],
+              "vwap": ind["vwap"],
+              "ema20": ind["ema20"],
+              "ema50": ind["ema50"],
+              "ema200": ind["ema200"],
+              "summary": summary,
+          }
+    except Exception as e:
+      print(f"Lỗi Twelve Data API: {e}")
+
+  # Dự phòng qua TradingView nếu mất kết nối Twelve Data
   handler = TA_Handler(
       symbol="XAUUSD",
       exchange="PEPPERSTONE",
       screener="cfd",
-      interval=selected_interval,
+      interval=Interval.INTERVAL_1_HOUR,
   )
   handler.add_indicators(["ATR", "VWAP"])
   analysis = handler.get_analysis()
   ind = analysis.indicators
-
-  atr_val = ind.get("ATR")
-  if not atr_val or atr_val == 0.0:
-    atr_val = abs(ind.get("high", 0.0) - ind.get("low", 0.0))
-
-  vwap_val = ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0)
-
-  base_data = {
+  return {
       "timeframe": timeframe_str,
       "close": ind.get("close", 0.0),
       "open": ind.get("open", 0.0),
@@ -155,34 +204,38 @@ def fetch_gold_data(timeframe_str):
       "macd": ind.get("MACD.macd", 0.0),
       "macd_signal": ind.get("MACD.signal", 0.0),
       "adx": ind.get("ADX", 0.0),
-      "atr": atr_val,
-      "vwap": vwap_val,
+      "atr": ind.get("ATR", 5.0),
+      "vwap": ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0),
       "ema20": ind.get("EMA20", 0.0),
       "ema50": ind.get("EMA50", 0.0),
       "ema200": ind.get("EMA200", 0.0),
-      "bb_upper": ind.get("BB.upper", 0.0),
-      "bb_lower": ind.get("BB.lower", 0.0),
       "summary": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
   }
 
-  # Lấy đúng cây nến vừa đóng trực tiếp từ biểu đồ TradingView
-  completed = fetch_completed_candle_tradingview(timeframe_str)
-  if completed:
-    print(
-        f"-> THÀNH CÔNG: Đã lấy nến vừa đóng từ TradingView: O={completed['open']},"
-        f" H={completed['high']}, L={completed['low']},"
-        f" C={completed['close']}"
-    )
-    base_data["open"] = completed["open"]
-    base_data["high"] = completed["high"]
-    base_data["low"] = completed["low"]
-    base_data["close"] = completed["close"]
-    base_data["change"] = completed["change"]
-    base_data["volume"] = completed["volume"]
-  else:
-    print("-> CẢNH BÁO: Chưa kết nối được WebSocket, đang dùng nến hiện tại.")
 
-  return base_data
+def fetch_1m_bars():
+  """Lấy mảng nến 1 phút từ Twelve Data để dò TP/SL chuẩn xác từng phút."""
+  if not TWELVE_DATA_API_KEY:
+    return None
+  try:
+    url = f"https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1min&outputsize=62&apikey={TWELVE_DATA_API_KEY}"
+    res = requests.get(url, timeout=10)
+    data = res.json()
+    if data.get("status") == "ok" and "values" in data:
+      bars = []
+      for row in reversed(data["values"][1:]):
+        dt_str = row["datetime"].split(" ")[-1][:5]
+        bars.append((
+            dt_str,
+            float(row["open"]),
+            float(row["high"]),
+            float(row["low"]),
+            float(row["close"]),
+        ))
+      return bars
+  except Exception as e:
+    print(f"Lỗi fetch 1m: {e}")
+  return None
 
 
 # ==================== PHÂN TÍCH VÀ LẬP KẾ HOẠCH ====================
@@ -333,7 +386,7 @@ def save_trades(data):
 def update_trade_engine(market_data, trade_plan):
   trades = load_trades()
   time_now_str = datetime.now().strftime("%H:%M")
-  m1_bars = fetch_1m_bars_tradingview()
+  m1_bars = fetch_1m_bars()
 
   def evaluate_trade(t):
     if m1_bars and len(m1_bars) >= 5:
@@ -519,7 +572,7 @@ def build_daily_summary_message(trades, final_close):
 
   return f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
 ⏱ <b>Ngày kết thúc:</b> {day_str} (Khối lượng: <code>0.01 lot</code>)
-🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Dò nến 1m TradingView | SL = 1.5 x ATR | TP = 2.0 x ATR
+🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Dò nến 1m | SL = 1.5 x ATR | TP = 2.0 x ATR
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>1️⃣ CHẾ ĐỘ 1 LỆNH DUY NHẤT (Single Position):</b>
