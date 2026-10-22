@@ -3,10 +3,10 @@
   "single_mode": {
     "current_trade": {
       "direction": "SELL",
-      "entry": 4096.3,
-      "sl": 4121.16,
-      "tp": 4063.16,
-      "time": "2026-10-22T07:00:00"
+      "entry": 4067.26,
+      "sl": 4090.21,
+      "tp": 4036.66,
+      "time": "2026-10-22T11:00:00"
     },
     "closed_trades": [
       {
@@ -80,6 +80,15 @@
         "tp": 4085.58,
         "status": "H\u1ee5t l\u1ec7nh",
         "pnl": 0.0
+      },
+      {
+        "direction": "SELL",
+        "entry": 4096.3,
+        "sl": 4121.16,
+        "tp": 4063.16,
+        "time": "2026-10-22T07:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 33.14
       }
     ]
   },
@@ -87,52 +96,10 @@
     "open_trades": [
       {
         "direction": "SELL",
-        "entry": 4096.3,
-        "sl": 4121.16,
-        "tp": 4063.16,
-        "time": "2026-10-22T07:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4091.62,
-        "sl": 4116.86,
-        "tp": 4057.96,
-        "time": "2026-10-22T08:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4091.62,
-        "sl": 4116.86,
-        "tp": 4057.96,
-        "time": "2026-10-22T08:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4096.05,
-        "sl": 4119.42,
-        "tp": 4064.89,
-        "time": "2026-10-22T09:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4096.05,
-        "sl": 4119.42,
-        "tp": 4064.89,
-        "time": "2026-10-22T09:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4087.22,
-        "sl": 4108.76,
-        "tp": 4058.5,
-        "time": "2026-10-22T10:00:00"
-      },
-      {
-        "direction": "SELL",
-        "entry": 4087.22,
-        "sl": 4108.76,
-        "tp": 4058.5,
-        "time": "2026-10-22T10:00:00"
+        "entry": 4067.26,
+        "sl": 4090.21,
+        "tp": 4036.66,
+        "time": "2026-10-22T11:00:00"
       }
     ],
     "closed_trades": [
@@ -207,6 +174,69 @@
         "tp": 4085.58,
         "status": "H\u1ee5t l\u1ec7nh",
         "pnl": 0.0
+      },
+      {
+        "direction": "SELL",
+        "entry": 4096.3,
+        "sl": 4121.16,
+        "tp": 4063.16,
+        "time": "2026-10-22T07:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 33.14
+      },
+      {
+        "direction": "SELL",
+        "entry": 4091.62,
+        "sl": 4116.86,
+        "tp": 4057.96,
+        "time": "2026-10-22T08:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 33.66
+      },
+      {
+        "direction": "SELL",
+        "entry": 4091.62,
+        "sl": 4116.86,
+        "tp": 4057.96,
+        "time": "2026-10-22T08:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 33.66
+      },
+      {
+        "direction": "SELL",
+        "entry": 4096.05,
+        "sl": 4119.42,
+        "tp": 4064.89,
+        "time": "2026-10-22T09:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 31.16
+      },
+      {
+        "direction": "SELL",
+        "entry": 4096.05,
+        "sl": 4119.42,
+        "tp": 4064.89,
+        "time": "2026-10-22T09:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 31.16
+      },
+      {
+        "direction": "SELL",
+        "entry": 4087.22,
+        "sl": 4108.76,
+        "tp": 4058.5,
+        "time": "2026-10-22T10:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 28.72
+      },
+      {
+        "direction": "SELL",
+        "entry": 4087.22,
+        "sl": 4108.76,
+        "tp": 4058.5,
+        "time": "2026-10-22T10:00:00",
+        "outcome": "HIT_TP",
+        "pnl": 28.72
       }
     ]
   },
