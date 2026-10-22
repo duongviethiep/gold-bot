@@ -16,7 +16,7 @@ jobs:
           python-version: '3.10'
 
       - name: Cai dat thu vien
-        run: pip install requests tradingview-ta
+        run: pip install requests tradingview-ta websocket-client
 
       - name: Chay bao cao gia vang
         env:
@@ -25,17 +25,16 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           HOUR_UTC=$(date -u +"%H")
-          # Chay khung 4H neu trung gio dong nen (01, 05, 09, 13, 17, 21 UTC)
           if [ "$HOUR_UTC" = "01" ] || [ "$HOUR_UTC" = "05" ] || [ "$HOUR_UTC" = "09" ] || [ "$HOUR_UTC" = "13" ] || [ "$HOUR_UTC" = "17" ] || [ "$HOUR_UTC" = "21" ]; then
             python gold_bot.py 4H
           fi
-          # Luon chay khung 1H moi dau gio (va tu dong gui tong ket ngay luc 22h UTC / 05h sang VN)
           python gold_bot.py 1H
 
       - name: Luu nhat ky lenh trong ngay
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git pull --rebase || true
           git add daily_trades.json || true
           git commit -m "Auto update daily trade log [skip ci]" || exit 0
           git push || true
