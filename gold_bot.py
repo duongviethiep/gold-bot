@@ -12,57 +12,90 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TRADES_FILE = "daily_trades.json"
 
 
-# ==================== LẤY NẾN ĐÃ ĐÓNG & NẾN 1 PHÚT ====================
+# ==================== LẤY ĐÚNG CÂY NẾN VỪA ĐÓNG (N-1) TỪ KRAKEN / BYBIT ====================
 def fetch_completed_candle(timeframe_str):
-  """Lấy chính xác cây nến vừa đóng hoàn toàn (n-1) để có biên độ High - Low chuẩn 100%."""
-  interval_param = "1h" if timeframe_str == "1H" else "4h"
-  url = f"https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval={interval_param}&limit=3"
-  headers = {
-      "User-Agent": (
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      )
-  }
+  """Lấy chính xác cây nến vừa đóng hoàn toàn (n-1) qua sàn Kraken/Bybit (không bị chặn trên GitHub Actions)."""
+  interval_kraken = 60 if timeframe_str == "1H" else 240
+  headers = {"User-Agent": "Mozilla/5.0"}
 
+  # 1. Nguồn chính: Kraken (sàn Mỹ, mở 100% cho GitHub Actions)
   try:
-    res = requests.get(url, headers=headers, timeout=8)
+    url_kraken = f"https://api.kraken.com/0/public/OHLC?pair=PAXGUSD&interval={interval_kraken}"
+    res = requests.get(url_kraken, headers=headers, timeout=8)
     data = res.json()
-    if isinstance(data, list) and len(data) >= 2:
-      c = data[-2]
-      o = float(c[1])
-      h = float(c[2])
-      l = float(c[3])
-      close_price = float(c[4])
-      vol = float(c[5])
-      chg = round((close_price - o) / o * 100, 2)
+    if (
+        isinstance(data, dict)
+        and "result" in data
+        and "PAXGUSD" in data["result"]
+    ):
+      bars = data["result"]["PAXGUSD"]
+      if len(bars) >= 2:
+        c = bars[-2]  # Cây nến vừa đóng hoàn toàn
+        o, h, l, close_p, vol = (
+            float(c[1]),
+            float(c[2]),
+            float(c[3]),
+            float(c[4]),
+            float(c[6]),
+        )
+        chg = round((close_p - o) / o * 100, 2)
+        return {
+            "open": o,
+            "high": h,
+            "low": l,
+            "close": close_p,
+            "volume": vol,
+            "change": chg,
+        }
+  except Exception as e:
+    print(f"Kraken error: {e}")
+
+  # 2. Nguồn dự phòng: Bybit
+  try:
+    interval_bybit = "60" if timeframe_str == "1H" else "240"
+    url_bybit = f"https://api.bybit.com/v5/market/kline?category=spot&symbol=PAXGUSDT&interval={interval_bybit}&limit=3"
+    res = requests.get(url_bybit, headers=headers, timeout=8)
+    data = res.json()
+    if (
+        data.get("retCode") == 0
+        and "list" in data.get("result", {})
+        and len(data["result"]["list"]) >= 2
+    ):
+      c = data["result"]["list"][1]  # Nến vừa đóng
+      o, h, l, close_p, vol = (
+          float(c[1]),
+          float(c[2]),
+          float(c[3]),
+          float(c[4]),
+          float(c[5]),
+      )
+      chg = round((close_p - o) / o * 100, 2)
       return {
           "open": o,
           "high": h,
           "low": l,
-          "close": close_price,
+          "close": close_p,
           "volume": vol,
           "change": chg,
       }
   except Exception as e:
-    print(f"Lỗi fetch_completed_candle: {e}")
+    print(f"Bybit error: {e}")
+
   return None
 
 
 def fetch_1m_bars():
-  """Lấy mảng 60 cây nến 1 phút của tiếng vừa qua để dò thứ tự chạm TP hay SL trước."""
-  url = "https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1m&limit=62"
-  headers = {
-      "User-Agent": (
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      )
-  }
+  """Lấy mảng 60 cây nến 1 phút qua Kraken để dò thứ tự chạm TP/SL chuẩn xác từng phút."""
+  headers = {"User-Agent": "Mozilla/5.0"}
   try:
+    url = "https://api.kraken.com/0/public/OHLC?pair=PAXGUSD&interval=1"
     res = requests.get(url, headers=headers, timeout=8)
     data = res.json()
-    if isinstance(data, list) and len(data) >= 10:
-      completed_1m = data[:-1]
+    if "result" in data and "PAXGUSD" in data["result"]:
+      raw_bars = data["result"]["PAXGUSD"][-62:-1]  # 60 cây nến 1 phút vừa qua
       bars = []
-      for b in completed_1m:
-        t_str = datetime.fromtimestamp(b[0] / 1000).strftime("%H:%M")
+      for b in raw_bars:
+        t_str = datetime.fromtimestamp(b[0]).strftime("%H:%M")
         bars.append(
             (t_str, float(b[1]), float(b[2]), float(b[3]), float(b[4]))
         )
@@ -135,6 +168,7 @@ def fetch_gold_data(timeframe_str):
       "summary": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
   }
 
+  # Ghi đè bằng số liệu chính xác 100% của cây nến vừa đóng (n-1)
   completed = fetch_completed_candle(timeframe_str)
   if completed:
     base_data["open"] = completed["open"]
@@ -298,7 +332,6 @@ def update_trade_engine(market_data, trade_plan):
   m1_bars = fetch_1m_bars()
 
   def evaluate_trade(t):
-    # Nếu có mảng nến 1 phút: Dò từng phút một theo đúng dòng thời gian thực tế
     if m1_bars and len(m1_bars) >= 5:
       for t_time, o, h, l, c in m1_bars:
         if t["status"] == "Chờ đón":
@@ -338,7 +371,7 @@ def update_trade_engine(market_data, trade_plan):
               return True
       return False
 
-    # Phương án dự phòng (dò theo nến tổng nếu mất mạng m1)
+    # Dự phòng nếu không có m1
     high, low = market_data["high"], market_data["low"]
     if t["status"] == "Chờ đón":
       if t["type"] == "BUY":
