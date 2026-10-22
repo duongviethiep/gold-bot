@@ -10,15 +10,25 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 CAPITAL_API_KEY = os.getenv("CAPITAL_API_KEY")
 CAPITAL_IDENTIFIER = os.getenv("CAPITAL_IDENTIFIER")
 CAPITAL_PASSWORD = os.getenv("CAPITAL_PASSWORD")
-CAPITAL_BASE_URL = os.getenv("CAPITAL_BASE_URL", "https://demo-api-capital.backend-capital.com")
+
+# Tự động thử cả 2 máy chủ Live và Demo
+URL_CANDIDATES = [
+    "https://api-capital.backend-capital.com",
+    "https://demo-api-capital.backend-capital.com"
+]
+custom_url = os.getenv("CAPITAL_BASE_URL")
+if custom_url:
+    URL_CANDIDATES.insert(0, custom_url.rstrip("/"))
 
 LOT_SIZE = 0.01
 LOT_VALUE_PER_DOLLAR = 1.0  # 0.01 lot XAU/USD: $1.00 biên độ = $1.00 P&L
 TRADES_FILE = "daily_trades.json"
 
 def get_capital_session():
-    """Xác thực với Capital.com để lấy CST và X-SECURITY-TOKEN."""
-    url = f"{CAPITAL_BASE_URL}/api/v1/session"
+    """
+    Xác thực với Capital.com.
+    Tự động thử cả Live URL và Demo URL để tương thích với môi trường tạo API Key.
+    """
     headers = {
         "X-CAP-API-KEY": CAPITAL_API_KEY,
         "Content-Type": "application/json"
@@ -29,21 +39,29 @@ def get_capital_session():
         "encryptedPassword": False
     }
     
-    resp = requests.post(url, headers=headers, json=payload, timeout=15)
-    if resp.status_code != 200:
-        raise Exception(f"Đăng nhập Capital.com thất bại [{resp.status_code}]: {resp.text}")
-        
-    cst = resp.headers.get("CST")
-    security_token = resp.headers.get("X-SECURITY-TOKEN")
-    
-    if not cst or not security_token:
-        raise Exception("Không tìm thấy CST hoặc X-SECURITY-TOKEN trong phản hồi của Capital.com")
-        
-    return cst, security_token
+    last_error = ""
+    for base_url in URL_CANDIDATES:
+        try:
+            url = f"{base_url}/api/v1/session"
+            print(f"Đang thử kết nối máy chủ Capital.com: {base_url}...")
+            resp = requests.post(url, headers=headers, json=payload, timeout=15)
+            if resp.status_code == 200:
+                cst = resp.headers.get("CST")
+                security_token = resp.headers.get("X-SECURITY-TOKEN")
+                if cst and security_token:
+                    print(f"-> Đăng nhập thành công qua máy chủ: {base_url}")
+                    return base_url, cst, security_token
+            last_error = f"[{resp.status_code}] {resp.text}"
+            print(f"-> Máy chủ {base_url} trả về lỗi: {last_error}")
+        except Exception as e:
+            last_error = str(e)
+            print(f"-> Không thể kết nối tới {base_url}: {last_error}")
+            
+    raise Exception(f"Đăng nhập Capital.com thất bại trên cả Live và Demo. Chi tiết lỗi: {last_error}")
 
-def fetch_candles(cst, security_token, epic="GOLD", resolution="HOUR", max_bars=40):
+def fetch_candles(base_url, cst, security_token, epic="GOLD", resolution="HOUR", max_bars=40):
     """Lấy danh sách nến lịch sử từ Capital.com."""
-    url = f"{CAPITAL_BASE_URL}/api/v1/prices/{epic}"
+    url = f"{base_url}/api/v1/prices/{epic}"
     headers = {
         "CST": cst,
         "X-SECURITY-TOKEN": security_token
@@ -79,10 +97,7 @@ def fetch_candles(cst, security_token, epic="GOLD", resolution="HOUR", max_bars=
     return candles
 
 def calculate_technical_indicators(candles):
-    """
-    Tính ATR(14), EMA20, EMA50, RSI(14), ADX(14).
-    Chỉ dùng các cây nến đã đóng hoàn chỉnh (loại bỏ nến [-1] đang chạy).
-    """
+    """Tính toán chỉ báo dựa trên các nến đã đóng hoàn chỉnh."""
     closed_candles = candles[:-1]
     
     closes = [c["close"] for c in closed_candles]
@@ -151,7 +166,7 @@ def calculate_technical_indicators(candles):
     }
 
 def generate_analysis(data):
-    """Tạo đúng 4 gạch đầu dòng cô đọng."""
+    """Tạo 4 gạch đầu dòng cô đọng."""
     c = data["candle"]
     close = c["close"]
     ema20 = data["ema20"]
@@ -345,10 +360,10 @@ def main():
         print("Lỗi: Thiếu CAPITAL_API_KEY, CAPITAL_IDENTIFIER hoặc CAPITAL_PASSWORD")
         sys.exit(1)
         
-    cst, sec_token = get_capital_session()
+    base_url, cst, sec_token = get_capital_session()
     
     # 1. Quét khung 1H
-    candles_1h = fetch_candles(cst, sec_token, epic="GOLD", resolution="HOUR", max_bars=40)
+    candles_1h = fetch_candles(base_url, cst, sec_token, epic="GOLD", resolution="HOUR", max_bars=40)
     data_1h = calculate_technical_indicators(candles_1h)
     analysis_1h = generate_analysis(data_1h)
     msg_1h = format_telegram_message("1H", data_1h, analysis_1h)
@@ -362,7 +377,7 @@ def main():
     # 2. Quét khung 4H khi đóng nến (01, 05, 09, 13, 17, 21 UTC)
     now_utc = datetime.now(timezone.utc)
     if now_utc.hour in [1, 5, 9, 13, 17, 21]:
-        candles_4h = fetch_candles(cst, sec_token, epic="GOLD", resolution="HOUR_4", max_bars=40)
+        candles_4h = fetch_candles(base_url, cst, sec_token, epic="GOLD", resolution="HOUR_4", max_bars=40)
         data_4h = calculate_technical_indicators(candles_4h)
         analysis_4h = generate_analysis(data_4h)
         msg_4h = format_telegram_message("4H", data_4h, analysis_4h)
