@@ -2,8 +2,6 @@ name: XAUUSD Hourly Gold Bot
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '1 * * * *'
 
 jobs:
   run-bot:
@@ -21,15 +19,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install requests
+          pip install tradingview-ta requests
 
       - name: Run Gold Bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          CAPITAL_API_KEY: ${{ secrets.CAPITAL_API_KEY }}
-          CAPITAL_IDENTIFIER: ${{ secrets.CAPITAL_IDENTIFIER }}
-          CAPITAL_PASSWORD: ${{ secrets.CAPITAL_PASSWORD }}
         run: |
           python gold_bot.py
 
