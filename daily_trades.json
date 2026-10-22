@@ -2,13 +2,11 @@
   "date": "2026-10-22",
   "single_mode": {
     "current_trade": {
-      "time": "06:14",
-      "type": "SELL",
-      "entry": 4114.33,
-      "sl": 4136.32,
-      "tp": 4085.01,
-      "status": "Ch\u1edd \u0111\u00f3n",
-      "pnl": 0.0
+      "direction": "SELL",
+      "entry": 4096.3,
+      "sl": 4121.16,
+      "tp": 4063.16,
+      "time": "2026-10-22T07:00:00"
     },
     "closed_trades": [
       {
@@ -88,94 +86,11 @@
   "multi_mode": {
     "open_trades": [
       {
-        "time": "06:14",
-        "type": "SELL",
-        "entry": 4114.33,
-        "sl": 4136.32,
-        "tp": 4085.01,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "06:36",
-        "type": "SELL",
-        "entry": 4113.9,
-        "sl": 4136.46,
-        "tp": 4083.82,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "06:44",
-        "type": "SELL",
-        "entry": 4113.65,
-        "sl": 4136.21,
-        "tp": 4083.57,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "06:52",
-        "type": "SELL",
-        "entry": 4114.0,
-        "sl": 4136.56,
-        "tp": 4083.92,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "07:01",
-        "type": "SELL",
-        "entry": 4111.7,
-        "sl": 4133.03,
-        "tp": 4083.26,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "07:11",
-        "type": "SELL",
-        "entry": 4112.09,
-        "sl": 4134.33,
-        "tp": 4082.44,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "07:18",
-        "type": "SELL",
-        "entry": 4112.42,
-        "sl": 4134.66,
-        "tp": 4082.77,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "07:40",
-        "type": "SELL",
-        "entry": 4111.54,
-        "sl": 4133.9,
-        "tp": 4081.72,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "07:46",
-        "type": "SELL",
-        "entry": 4111.59,
-        "sl": 4133.95,
-        "tp": 4081.77,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
-      },
-      {
-        "time": "08:02",
-        "type": "SELL",
-        "entry": 4109.55,
-        "sl": 4131.33,
-        "tp": 4080.51,
-        "status": "Ch\u1edd \u0111\u00f3n",
-        "pnl": 0.0
+        "direction": "SELL",
+        "entry": 4096.3,
+        "sl": 4121.16,
+        "tp": 4063.16,
+        "time": "2026-10-22T07:00:00"
       }
     ],
     "closed_trades": [
