@@ -25,10 +25,7 @@ LOT_VALUE_PER_DOLLAR = 1.0  # 0.01 lot XAU/USD: $1.00 biên độ = $1.00 P&L
 TRADES_FILE = "daily_trades.json"
 
 def get_capital_session():
-    """
-    Xác thực với Capital.com.
-    Tự động thử cả Live URL và Demo URL để tương thích với môi trường tạo API Key.
-    """
+    """Xác thực với Capital.com."""
     headers = {
         "X-CAP-API-KEY": CAPITAL_API_KEY,
         "Content-Type": "application/json"
@@ -242,18 +239,25 @@ def format_telegram_message(tf, data, analysis):
     return msg
 
 def load_trades():
-    if os.path.exists(TRADES_FILE):
-        try:
-            with open(TRADES_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    return {
+    default_data = {
         "date": today_str,
         "single_mode": {"current_trade": None, "closed_trades": []},
         "multi_mode": {"open_trades": [], "closed_trades": []}
     }
+    if os.path.exists(TRADES_FILE):
+        try:
+            with open(TRADES_FILE, "r") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    if "single_mode" not in data or not isinstance(data["single_mode"], dict):
+                        data["single_mode"] = {"current_trade": None, "closed_trades": []}
+                    if "multi_mode" not in data or not isinstance(data["multi_mode"], dict):
+                        data["multi_mode"] = {"open_trades": [], "closed_trades": []}
+                    return data
+        except Exception:
+            pass
+    return default_data
 
 def save_trades(trades):
     with open(TRADES_FILE, "w") as f:
@@ -262,44 +266,60 @@ def save_trades(trades):
 def evaluate_and_update_trades(trades, latest_candle, new_signal):
     high, low = latest_candle["high"], latest_candle["low"]
     
-    # Single Mode
-    curr = trades["single_mode"]["current_trade"]
-    if curr:
+    # 1. Single Mode
+    curr = trades.get("single_mode", {}).get("current_trade")
+    # Kiểm tra an toàn xem trade có đủ các trường dữ liệu hay không
+    if isinstance(curr, dict) and "direction" in curr and "entry" in curr and "sl" in curr and "tp" in curr:
+        direction = curr["direction"]
+        entry = curr["entry"]
+        sl = curr["sl"]
+        tp = curr["tp"]
         closed, pnl, outcome = False, 0.0, ""
-        if curr["direction"] == "BUY":
-            if low <= curr["sl"]:
-                closed, pnl, outcome = True, round((curr["sl"] - curr["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
-            elif high >= curr["tp"]:
-                closed, pnl, outcome = True, round((curr["tp"] - curr["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
-        elif curr["direction"] == "SELL":
-            if high >= curr["sl"]:
-                closed, pnl, outcome = True, round((curr["entry"] - curr["sl"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
-            elif low <= curr["tp"]:
-                closed, pnl, outcome = True, round((curr["entry"] - curr["tp"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        
+        if direction == "BUY":
+            if low <= sl:
+                closed, pnl, outcome = True, round((sl - entry) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif high >= tp:
+                closed, pnl, outcome = True, round((tp - entry) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        elif direction == "SELL":
+            if high >= sl:
+                closed, pnl, outcome = True, round((entry - sl) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif low <= tp:
+                closed, pnl, outcome = True, round((entry - tp) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
                 
         if closed:
             curr["outcome"] = outcome
             curr["pnl"] = pnl
             trades["single_mode"]["closed_trades"].append(curr)
             trades["single_mode"]["current_trade"] = None
+    elif curr is not None:
+        # Nếu cấu trúc dữ liệu cũ bị lỗi, tự động đặt về None
+        trades["single_mode"]["current_trade"] = None
 
     if trades["single_mode"]["current_trade"] is None and new_signal:
         trades["single_mode"]["current_trade"] = new_signal
         
-    # Multi Mode
+    # 2. Multi Mode
     remaining_open = []
-    for t in trades["multi_mode"]["open_trades"]:
+    for t in trades.get("multi_mode", {}).get("open_trades", []):
+        if not (isinstance(t, dict) and "direction" in t and "entry" in t and "sl" in t and "tp" in t):
+            continue
+        direction = t["direction"]
+        entry = t["entry"]
+        sl = t["sl"]
+        tp = t["tp"]
         closed, pnl, outcome = False, 0.0, ""
-        if t["direction"] == "BUY":
-            if low <= t["sl"]:
-                closed, pnl, outcome = True, round((t["sl"] - t["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
-            elif high >= t["tp"]:
-                closed, pnl, outcome = True, round((t["tp"] - t["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
-        elif t["direction"] == "SELL":
-            if high >= t["sl"]:
-                closed, pnl, outcome = True, round((t["entry"] - t["sl"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
-            elif low <= t["tp"]:
-                closed, pnl, outcome = True, round((t["entry"] - t["tp"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        
+        if direction == "BUY":
+            if low <= sl:
+                closed, pnl, outcome = True, round((sl - entry) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif high >= tp:
+                closed, pnl, outcome = True, round((tp - entry) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        elif direction == "SELL":
+            if high >= sl:
+                closed, pnl, outcome = True, round((entry - sl) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif low <= tp:
+                closed, pnl, outcome = True, round((entry - tp) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
                 
         if closed:
             t["outcome"] = outcome
@@ -313,15 +333,15 @@ def evaluate_and_update_trades(trades, latest_candle, new_signal):
         trades["multi_mode"]["open_trades"].append(new_signal)
 
 def generate_daily_summary(trades):
-    s_closed = trades["single_mode"]["closed_trades"]
-    m_closed = trades["multi_mode"]["closed_trades"]
+    s_closed = trades.get("single_mode", {}).get("closed_trades", [])
+    m_closed = trades.get("multi_mode", {}).get("closed_trades", [])
     
-    s_pnl = sum(t["pnl"] for t in s_closed)
-    s_wins = len([t for t in s_closed if t["pnl"] > 0])
+    s_pnl = sum(t.get("pnl", 0.0) for t in s_closed)
+    s_wins = len([t for t in s_closed if t.get("pnl", 0.0) > 0])
     s_winrate = (s_wins / len(s_closed) * 100) if s_closed else 0.0
     
-    m_pnl = sum(t["pnl"] for t in m_closed)
-    m_wins = len([t for t in m_closed if t["pnl"] > 0])
+    m_pnl = sum(t.get("pnl", 0.0) for t in m_closed)
+    m_wins = len([t for t in m_closed if t.get("pnl", 0.0) > 0])
     m_winrate = (m_wins / len(m_closed) * 100) if m_closed else 0.0
     
     s_sign = "+$" if s_pnl >= 0 else "-$"
