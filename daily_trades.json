@@ -140,6 +140,15 @@
         "tp": 4082.44,
         "status": "Ch\u1edd \u0111\u00f3n",
         "pnl": 0.0
+      },
+      {
+        "time": "07:18",
+        "type": "SELL",
+        "entry": 4112.42,
+        "sl": 4134.66,
+        "tp": 4082.77,
+        "status": "Ch\u1edd \u0111\u00f3n",
+        "pnl": 0.0
       }
     ],
     "closed_trades": [
