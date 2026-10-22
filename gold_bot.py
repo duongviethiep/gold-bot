@@ -176,32 +176,32 @@ def generate_analysis(data):
         bias = "SELL"
         
     if adx < 20:
-        momentum = f"RSI {rsi} | Sideway tích lũy (ADX {adx} < 20 - Khuyến nghị đứng ngoài)"
+        momentum = f"RSI {rsi} - Sideway tích lũy (ADX {adx} < 20 - Khuyến nghị đứng ngoài)"
         is_choppy = True
     else:
         status = "Quá mua" if rsi > 70 else ("Quá bán" if rsi < 30 else "Trung tính")
-        momentum = f"RSI {rsi} ({status}) | Xu hướng có lực rõ (ADX {adx})"
+        momentum = f"RSI {rsi} ({status}) - Xu hướng rõ ràng (ADX {adx})"
         is_choppy = False
         
-    key_sr = f"Kháng cự: ${res} \vert{} Hỗ trợ: ${sup}"
+    key_sr = f"Kháng cự: ${res} - Hỗ trợ: ${sup}"
     
     sl_dist = round(1.5 * atr, 2)
     tp_dist = round(2.0 * atr, 2)
     
     if is_choppy:
-        action = "ĐỨNG NGOÀI (Né sideway, không vào lệnh vội)"
+        action = "ĐỨNG NGOÀI (Thị trường sideway biên hẹp, không vào lệnh vội)"
         trade_signal = None
     elif bias == "BUY":
         entry = round(max(sup, close - round(0.5 * atr, 2)), 2)
         sl = round(entry - sl_dist, 2)
         tp = round(entry + tp_dist, 2)
-        action = f"Chờ Buy Limit quanh ${entry} (Không mua đuổi) | SL: ${sl} (-${sl_dist}) | TP: ${tp} (+${tp_dist})"
+        action = f"Chờ Buy Limit quanh ${entry} (Không mua đuổi) - SL: ${sl} (-${sl_dist}) - TP: ${tp} (+${tp_dist})"
         trade_signal = {"direction": "BUY", "entry": entry, "sl": sl, "tp": tp, "time": c["time_utc"]}
     else:
         entry = round(min(res, close + round(0.5 * atr, 2)), 2)
         sl = round(entry + sl_dist, 2)
         tp = round(entry - tp_dist, 2)
-        action = f"Chờ Sell Limit quanh ${entry} (Không bán đuổi) | SL: ${sl} (-${sl_dist}) | TP: ${tp} (+${tp_dist})"
+        action = f"Chờ Sell Limit quanh ${entry} (Không bán đuổi) - SL: ${sl} (-${sl_dist}) - TP: ${tp} (+${tp_dist})"
         trade_signal = {"direction": "SELL", "entry": entry, "sl": sl, "tp": tp, "time": c["time_utc"]}
         
     return {
@@ -217,12 +217,12 @@ def format_telegram_message(tf, data, analysis):
     msg = (
         f"📊 *XAU/USD ({tf}) - CÂY NẾN ĐÃ ĐÓNG*\n"
         f"⏰ *Nến kết thúc:* `{c['time_utc']}` (UTC)\n"
-        f"💰 *O:* `{c['open']}` | *H:* `{c['high']}` | *L:* `{c['low']}` | *C:* `{c['close']}`\n\n"
+        f"💰 *O:* `{c['open']}` - *H:* `{c['high']}` - *L:* `{c['low']}` - *C:* `{c['close']}`\n\n"
         f"• *Xu hướng:* {analysis['trend']}\n"
         f"• *Động lực:* {analysis['momentum']}\n"
         f"• *Vùng cản:* {analysis['key_sr']}\n"
         f"• *Kế hoạch:* {analysis['action']}\n"
-        f"*(ATR: ${data['atr14']} | Khối lượng: 0.01 lot = $1/giá)*"
+        f"*(ATR: ${data['atr14']} - Khối lượng: 0.01 lot = $1/giá)*"
     )
     return msg
 
