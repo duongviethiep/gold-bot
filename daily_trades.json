@@ -2,11 +2,11 @@
   "date": "2026-10-22",
   "single_mode": {
     "current_trade": {
-      "time": "01:01",
+      "time": "02:01",
       "type": "SELL",
-      "entry": 4143.62,
-      "sl": 4163.16,
-      "tp": 4117.56,
+      "entry": 4143.77,
+      "sl": 4162.87,
+      "tp": 4118.3,
       "status": "Ch\u1edd \u0111\u00f3n",
       "pnl": 0.0
     },
@@ -19,17 +19,26 @@
         "tp": 4117.08,
         "status": "H\u1ee5t l\u1ec7nh",
         "pnl": 0.0
-      }
-    ]
-  },
-  "multi_mode": {
-    "open_trades": [
+      },
       {
         "time": "01:01",
         "type": "SELL",
         "entry": 4143.62,
         "sl": 4163.16,
         "tp": 4117.56,
+        "status": "H\u1ee5t l\u1ec7nh",
+        "pnl": 0.0
+      }
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [
+      {
+        "time": "02:01",
+        "type": "SELL",
+        "entry": 4143.77,
+        "sl": 4162.87,
+        "tp": 4118.3,
         "status": "Ch\u1edd \u0111\u00f3n",
         "pnl": 0.0
       }
@@ -41,6 +50,15 @@
         "entry": 4143.16,
         "sl": 4162.72,
         "tp": 4117.08,
+        "status": "H\u1ee5t l\u1ec7nh",
+        "pnl": 0.0
+      },
+      {
+        "time": "01:01",
+        "type": "SELL",
+        "entry": 4143.62,
+        "sl": 4163.16,
+        "tp": 4117.56,
         "status": "H\u1ee5t l\u1ec7nh",
         "pnl": 0.0
       }
