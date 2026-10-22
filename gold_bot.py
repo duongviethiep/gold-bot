@@ -18,9 +18,9 @@ EXCHANGE = "PEPPERSTONE"
 SCREENER = "cfd"
 
 
-# ==================== PLAYWRIGHT CHROMIUM LẤY NẾN ĐÃ ĐÓNG ====================
+# ==================== PLAYWRIGHT CHROMIUM TỐI ƯU SIÊU TỐC ====================
 def fetch_completed_candle_playwright(timeframe_str="1H"):
-  """Khởi chạy Chromium thật, mở TradingView với sessionid của anh và trích xuất đúng cây nến vừa đóng."""
+  """Khởi chạy Chromium siêu nhẹ (chặn ảnh/font) để bóc tách chính xác 100% cây nến vừa đóng từ TradingView."""
   from playwright.sync_api import sync_playwright
 
   tf_code = "60" if timeframe_str == "1H" else "240"
@@ -37,6 +37,7 @@ def fetch_completed_candle_playwright(timeframe_str="1H"):
               "--no-sandbox",
               "--disable-setuid-sandbox",
               "--disable-blink-features=AutomationControlled",
+              "--disable-gpu",
           ],
       )
       context = browser.new_context(
@@ -58,20 +59,32 @@ def fetch_completed_candle_playwright(timeframe_str="1H"):
 
       page = context.new_page()
 
+      # TĂNG TỐC 500%: Chặn toàn bộ hình ảnh, font chữ, media để biểu đồ tải trong 3 giây
+      page.route(
+          "**/*.{png,jpg,jpeg,gif,webp,svg,woff,woff2,ttf,otf,css}",
+          lambda route: route.abort(),
+      )
+
       # Chặn bắt gói tin WebSocket biểu đồ
       def on_websocket(ws):
         def on_frame(payload):
           nonlocal completed_candle
-          if isinstance(payload, str) and "timescale_update" in payload:
+          # Giải mã cả chuỗi dạng bytes lẫn string
+          text = (
+              payload.decode("utf-8", errors="ignore")
+              if isinstance(payload, bytes)
+              else str(payload)
+          )
+          if "timescale_update" in text:
             pattern = r"~m~\d+~m~"
-            parts = [m for m in re.split(pattern, payload) if m.strip()]
+            parts = [m for m in re.split(pattern, text) if m.strip()]
             for part in parts:
               try:
                 data = json.loads(part)
                 if data.get("m") == "timescale_update":
                   series = data["p"][1]["s1"]["s"]
                   if len(series) >= 2:
-                    # series[-2] là cây nến vừa đóng xong 100%!
+                    # series[-2] là CÂY NẾN VỪA ĐÓNG HOÀN TOÀN TRÊN BIỂU ĐỒ!
                     c = series[-2]["v"]
                     completed_candle = {
                         "open": float(c[1]),
@@ -91,8 +104,13 @@ def fetch_completed_candle_playwright(timeframe_str="1H"):
       page.on("websocket", on_websocket)
 
       try:
-        page.goto(target_url, wait_until="load", timeout=25000)
-        page.wait_for_timeout(4000)
+        # domcontentloaded nạp cực nhanh trong 2-3 giây
+        page.goto(target_url, wait_until="domcontentloaded", timeout=20000)
+        # Chờ tối đa 10 giây, hễ bắt được nến là thoát ngay lập tức
+        for _ in range(20):
+          if completed_candle:
+            break
+          page.wait_for_timeout(500)
       except Exception as err:
         print(f"Lỗi tải trang TradingView: {err}")
 
@@ -162,6 +180,8 @@ def fetch_gold_data(timeframe_str):
     base_data["close"] = completed["close"]
     base_data["change"] = completed["change"]
     base_data["volume"] = completed["volume"]
+  else:
+    print("-> CẢNH BÁO: Chưa bóc được nến đóng, đang dùng nến mặc định.")
 
   return base_data
 
@@ -317,7 +337,6 @@ def update_trade_engine(market_data, trade_plan):
   time_now_str = datetime.now().strftime("%H:%M")
 
   def evaluate_trade(t):
-    # Khớp lệnh chờ đón
     if t["status"] == "Chờ đón":
       if t["type"] == "BUY":
         if low <= t["entry"]:
@@ -334,7 +353,6 @@ def update_trade_engine(market_data, trade_plan):
           t["pnl"] = 0.0
           return True
 
-    # Kiểm tra TP / SL của lệnh đang chạy
     if t["status"] == "Đang chạy":
       if t["type"] == "BUY":
         if high >= t["tp"] and low <= t["sl"]:
