@@ -2,6 +2,7 @@ from datetime import datetime
 import html
 import json
 import os
+import re
 import sys
 import requests
 from tradingview_ta import Interval, TA_Handler
@@ -9,190 +10,123 @@ from tradingview_ta import Interval, TA_Handler
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-TWELVE_DATA_API_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
+TRADINGVIEW_SESSION_ID = os.environ.get("TRADINGVIEW_SESSION_ID", "")
 TRADES_FILE = "daily_trades.json"
 
+SYMBOL = "XAUUSD"
+EXCHANGE = "PEPPERSTONE"
+SCREENER = "cfd"
 
-# ==================== TÍNH TOÁN CHỈ BÁO KỸ THUẬT NỘI BỘ ====================
-def calc_technical_indicators(candles):
-  closes = [c["close"] for c in candles]
 
-  def calc_ema(series, period):
-    if len(series) < period:
-      return series[-1]
-    m = 2 / (period + 1)
-    ema = sum(series[:period]) / period
-    for val in series[period:]:
-      ema = (val - ema) * m + ema
-    return ema
+# ==================== PLAYWRIGHT CHROMIUM LẤY NẾN ĐÃ ĐÓNG ====================
+def fetch_completed_candle_playwright(timeframe_str="1H"):
+  """Khởi chạy Chromium thật, mở TradingView với sessionid của anh và trích xuất đúng cây nến vừa đóng."""
+  from playwright.sync_api import sync_playwright
 
-  def calc_rsi(series, period=14):
-    if len(series) <= period:
-      return 50.0
-    gains = [max(series[i] - series[i - 1], 0) for i in range(1, len(series))]
-    losses = [max(series[i - 1] - series[i], 0) for i in range(1, len(series))]
-    avg_g = sum(gains[:period]) / period
-    avg_l = sum(losses[:period]) / period
-    for i in range(period, len(gains)):
-      avg_g = (avg_g * (period - 1) + gains[i]) / period
-      avg_l = (avg_l * (period - 1) + losses[i]) / period
-    if avg_l == 0:
-      return 100.0
-    return 100 - (100 / (1 + avg_g / avg_l))
+  tf_code = "60" if timeframe_str == "1H" else "240"
+  target_url = (
+      f"https://www.tradingview.com/chart/?symbol={EXCHANGE}:{SYMBOL}&interval={tf_code}"
+  )
+  completed_candle = None
 
-  def calc_atr(candles, period=14):
-    if len(candles) <= period:
-      return abs(candles[-1]["high"] - candles[-1]["low"])
-    trs = [
-        max(
-            candles[i]["high"] - candles[i]["low"],
-            abs(candles[i]["high"] - candles[i - 1]["close"]),
-            abs(candles[i]["low"] - candles[i - 1]["close"]),
-        )
-        for i in range(1, len(candles))
-    ]
-    atr = sum(trs[:period]) / period
-    for i in range(period, len(trs)):
-      atr = (atr * (period - 1) + trs[i]) / period
-    return atr
-
-  def calc_macd(series):
-    ema12 = calc_ema(series, 12)
-    ema26 = calc_ema(series, 26)
-    macd = ema12 - ema26
-    signal = macd * 0.8
-    return macd, signal
-
-  def calc_adx(candles, period=14):
-    if len(candles) <= period:
-      return 25.0
-    trs, p_dm, m_dm = [], [], []
-    for i in range(1, len(candles)):
-      h, l = candles[i]["high"], candles[i]["low"]
-      ph, pl, pc = (
-          candles[i - 1]["high"],
-          candles[i - 1]["low"],
-          candles[i - 1]["close"],
+  try:
+    with sync_playwright() as p:
+      browser = p.chromium.launch(
+          headless=True,
+          args=[
+              "--no-sandbox",
+              "--disable-setuid-sandbox",
+              "--disable-blink-features=AutomationControlled",
+          ],
       )
-      trs.append(max(h - l, abs(h - pc), abs(l - pc)))
-      up, down = h - ph, pl - l
-      p_dm.append(up if up > down and up > 0 else 0)
-      m_dm.append(down if down > up and down > 0 else 0)
-    tr_s = sum(trs[:period])
-    p_s = sum(p_dm[:period])
-    m_s = sum(m_dm[:period])
-    for i in range(period, len(trs)):
-      tr_s = tr_s - (tr_s / period) + trs[i]
-      p_s = p_s - (p_s / period) + p_dm[i]
-      m_s = m_s - (m_s / period) + m_dm[i]
-    p_di = 100 * (p_s / tr_s) if tr_s > 0 else 0
-    m_di = 100 * (m_s / tr_s) if tr_s > 0 else 0
-    return (
-        100 * abs(p_di - m_di) / (p_di + m_di)
-        if (p_di + m_di) > 0
-        else 20.0
-    )
+      context = browser.new_context(
+          user_agent=(
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+              " (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+          ),
+          viewport={"width": 1280, "height": 800},
+      )
 
-  def calc_vwap(candles):
-    cum_pv = sum(
-        ((c["high"] + c["low"] + c["close"]) / 3) * c["volume"] for c in candles
-    )
-    cum_v = sum(c["volume"] for c in candles)
-    return cum_pv / cum_v if cum_v > 0 else candles[-1]["close"]
+      # Nạp cookie đăng nhập tài khoản của anh
+      if TRADINGVIEW_SESSION_ID:
+        context.add_cookies([{
+            "name": "sessionid",
+            "value": TRADINGVIEW_SESSION_ID,
+            "domain": ".tradingview.com",
+            "path": "/",
+        }])
 
-  return {
-      "ema20": calc_ema(closes, 20),
-      "ema50": calc_ema(closes, 50),
-      "ema200": calc_ema(closes, 200),
-      "rsi": calc_rsi(closes),
-      "atr": calc_atr(candles),
-      "macd": calc_macd(closes)[0],
-      "macd_signal": calc_macd(closes)[1],
-      "adx": calc_adx(candles),
-      "vwap": calc_vwap(candles),
-  }
+      page = context.new_page()
+
+      # Chặn bắt gói tin WebSocket biểu đồ
+      def on_websocket(ws):
+        def on_frame(payload):
+          nonlocal completed_candle
+          if isinstance(payload, str) and "timescale_update" in payload:
+            pattern = r"~m~\d+~m~"
+            parts = [m for m in re.split(pattern, payload) if m.strip()]
+            for part in parts:
+              try:
+                data = json.loads(part)
+                if data.get("m") == "timescale_update":
+                  series = data["p"][1]["s1"]["s"]
+                  if len(series) >= 2:
+                    # series[-2] là cây nến vừa đóng xong 100%!
+                    c = series[-2]["v"]
+                    completed_candle = {
+                        "open": float(c[1]),
+                        "high": float(c[2]),
+                        "low": float(c[3]),
+                        "close": float(c[4]),
+                        "volume": float(c[5]),
+                        "change": round(
+                            (float(c[4]) - float(c[1])) / float(c[1]) * 100, 2
+                        ),
+                    }
+              except Exception:
+                pass
+
+        ws.on("framereceived", on_frame)
+
+      page.on("websocket", on_websocket)
+
+      try:
+        page.goto(target_url, wait_until="load", timeout=25000)
+        page.wait_for_timeout(4000)
+      except Exception as err:
+        print(f"Lỗi tải trang TradingView: {err}")
+
+      browser.close()
+  except Exception as e:
+    print(f"Lỗi Playwright: {e}")
+
+  return completed_candle
 
 
-# ==================== LẤY NẾN ĐÃ ĐÓNG TỪ TWELVE DATA ====================
 def fetch_gold_data(timeframe_str):
-  tf_api = "1h" if timeframe_str == "1H" else "4h"
+  interval_map = {
+      "1H": Interval.INTERVAL_1_HOUR,
+      "4H": Interval.INTERVAL_4_HOURS,
+  }
+  selected_interval = interval_map.get(timeframe_str, Interval.INTERVAL_1_HOUR)
 
-  if TWELVE_DATA_API_KEY:
-    try:
-      url = f"https://api.twelvedata.com/time_series?symbol=XAU/USD&interval={tf_api}&outputsize=50&apikey={TWELVE_DATA_API_KEY}"
-      res = requests.get(url, timeout=10)
-      data = res.json()
-      if data.get("status") == "ok" and "values" in data:
-        vals = data["values"]
-        if len(vals) >= 2:
-          # vals[0] là nến đang chạy, vals[1] là CÂY NẾN VỪA ĐÓNG HOÀN TOÀN!
-          cb = vals[1]
-          o = float(cb["open"])
-          h = float(cb["high"])
-          l = float(cb["low"])
-          c = float(cb["close"])
-          v = float(cb.get("volume", 0) or 0)
-          chg = round((c - o) / o * 100, 2)
-
-          # Chuẩn bị chuỗi nến quá khứ (sắp xếp từ cũ đến mới) để tính chỉ báo chuẩn
-          candles_history = []
-          for row in reversed(vals[1:]):
-            candles_history.append({
-                "open": float(row["open"]),
-                "high": float(row["high"]),
-                "low": float(row["low"]),
-                "close": float(row["close"]),
-                "volume": float(row.get("volume", 0) or 0),
-            })
-
-          ind = calc_technical_indicators(candles_history)
-
-          # Đánh giá tín hiệu tổng quan
-          summary = "NEUTRAL"
-          if c > ind["ema20"] and ind["ema20"] > ind["ema50"] and ind["rsi"] >= 50:
-            summary = "BUY"
-          elif (
-              c < ind["ema20"] and ind["ema20"] < ind["ema50"] and ind["rsi"] < 50
-          ):
-            summary = "SELL"
-
-          print(
-              f"-> THÀNH CÔNG: Đã lấy nến vừa đóng XAU/USD: O={o}, H={h}, L={l},"
-              f" C={c}, Range={h-l:.2f} USD"
-          )
-          return {
-              "timeframe": timeframe_str,
-              "close": c,
-              "open": o,
-              "high": h,
-              "low": l,
-              "change": chg,
-              "volume": v,
-              "rsi": ind["rsi"],
-              "macd": ind["macd"],
-              "macd_signal": ind["macd_signal"],
-              "adx": ind["adx"],
-              "atr": ind["atr"],
-              "vwap": ind["vwap"],
-              "ema20": ind["ema20"],
-              "ema50": ind["ema50"],
-              "ema200": ind["ema200"],
-              "summary": summary,
-          }
-    except Exception as e:
-      print(f"Lỗi Twelve Data API: {e}")
-
-  # Dự phòng qua TradingView nếu mất kết nối Twelve Data
   handler = TA_Handler(
-      symbol="XAUUSD",
-      exchange="PEPPERSTONE",
-      screener="cfd",
-      interval=Interval.INTERVAL_1_HOUR,
+      symbol=SYMBOL,
+      exchange=EXCHANGE,
+      screener=SCREENER,
+      interval=selected_interval,
   )
   handler.add_indicators(["ATR", "VWAP"])
   analysis = handler.get_analysis()
   ind = analysis.indicators
-  return {
+
+  atr_val = ind.get("ATR")
+  if not atr_val or atr_val == 0.0:
+    atr_val = abs(ind.get("high", 0.0) - ind.get("low", 0.0))
+
+  vwap_val = ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0)
+
+  base_data = {
       "timeframe": timeframe_str,
       "close": ind.get("close", 0.0),
       "open": ind.get("open", 0.0),
@@ -204,38 +138,32 @@ def fetch_gold_data(timeframe_str):
       "macd": ind.get("MACD.macd", 0.0),
       "macd_signal": ind.get("MACD.signal", 0.0),
       "adx": ind.get("ADX", 0.0),
-      "atr": ind.get("ATR", 5.0),
-      "vwap": ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0),
+      "atr": atr_val,
+      "vwap": vwap_val,
       "ema20": ind.get("EMA20", 0.0),
       "ema50": ind.get("EMA50", 0.0),
       "ema200": ind.get("EMA200", 0.0),
+      "bb_upper": ind.get("BB.upper", 0.0),
+      "bb_lower": ind.get("BB.lower", 0.0),
       "summary": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
   }
 
+  # Trích xuất cây nến vừa đóng hoàn toàn từ Playwright Chromium
+  completed = fetch_completed_candle_playwright(timeframe_str)
+  if completed:
+    print(
+        "-> THÀNH CÔNG: Đã bóc tách nến vừa đóng từ TradingView Chromium:"
+        f" O={completed['open']}, H={completed['high']}, L={completed['low']},"
+        f" C={completed['close']}"
+    )
+    base_data["open"] = completed["open"]
+    base_data["high"] = completed["high"]
+    base_data["low"] = completed["low"]
+    base_data["close"] = completed["close"]
+    base_data["change"] = completed["change"]
+    base_data["volume"] = completed["volume"]
 
-def fetch_1m_bars():
-  """Lấy mảng nến 1 phút từ Twelve Data để dò TP/SL chuẩn xác từng phút."""
-  if not TWELVE_DATA_API_KEY:
-    return None
-  try:
-    url = f"https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1min&outputsize=62&apikey={TWELVE_DATA_API_KEY}"
-    res = requests.get(url, timeout=10)
-    data = res.json()
-    if data.get("status") == "ok" and "values" in data:
-      bars = []
-      for row in reversed(data["values"][1:]):
-        dt_str = row["datetime"].split(" ")[-1][:5]
-        bars.append((
-            dt_str,
-            float(row["open"]),
-            float(row["high"]),
-            float(row["low"]),
-            float(row["close"]),
-        ))
-      return bars
-  except Exception as e:
-    print(f"Lỗi fetch 1m: {e}")
-  return None
+  return base_data
 
 
 # ==================== PHÂN TÍCH VÀ LẬP KẾ HOẠCH ====================
@@ -357,7 +285,7 @@ Bạn là chuyên gia phân tích kỹ thuật vàng (XAUUSD). Hãy viết nhậ
   return text_plan, trade_plan
 
 
-# ==================== BỘ QUẢN LÝ LỆNH DÒ NẾN 1 PHÚT ====================
+# ==================== BỘ QUẢN LÝ LỆNH ====================
 def load_trades():
   today_str = datetime.now().strftime("%Y-%m-%d")
   if os.path.exists(TRADES_FILE):
@@ -385,50 +313,11 @@ def save_trades(data):
 
 def update_trade_engine(market_data, trade_plan):
   trades = load_trades()
+  high, low = market_data["high"], market_data["low"]
   time_now_str = datetime.now().strftime("%H:%M")
-  m1_bars = fetch_1m_bars()
 
   def evaluate_trade(t):
-    if m1_bars and len(m1_bars) >= 5:
-      for t_time, o, h, l, c in m1_bars:
-        if t["status"] == "Chờ đón":
-          if t["type"] == "BUY":
-            if l <= t["entry"]:
-              t["status"] = "Đang chạy"
-            elif h >= t["tp"]:
-              t["status"] = "Hụt lệnh"
-              t["pnl"] = 0.0
-              return True
-          elif t["type"] == "SELL":
-            if h >= t["entry"]:
-              t["status"] = "Đang chạy"
-            elif l <= t["tp"]:
-              t["status"] = "Hụt lệnh"
-              t["pnl"] = 0.0
-              return True
-
-        if t["status"] == "Đang chạy":
-          if t["type"] == "BUY":
-            if h >= t["tp"]:
-              t["status"] = f"Đạt TP lúc {t_time}"
-              t["pnl"] = round(t["tp"] - t["entry"], 2)
-              return True
-            elif l <= t["sl"]:
-              t["status"] = f"Chạm SL lúc {t_time}"
-              t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-              return True
-          elif t["type"] == "SELL":
-            if l <= t["tp"]:
-              t["status"] = f"Đạt TP lúc {t_time}"
-              t["pnl"] = round(t["entry"] - t["tp"], 2)
-              return True
-            elif h >= t["sl"]:
-              t["status"] = f"Chạm SL lúc {t_time}"
-              t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-              return True
-      return False
-
-    high, low = market_data["high"], market_data["low"]
+    # Khớp lệnh chờ đón
     if t["status"] == "Chờ đón":
       if t["type"] == "BUY":
         if low <= t["entry"]:
@@ -445,6 +334,7 @@ def update_trade_engine(market_data, trade_plan):
           t["pnl"] = 0.0
           return True
 
+    # Kiểm tra TP / SL của lệnh đang chạy
     if t["status"] == "Đang chạy":
       if t["type"] == "BUY":
         if high >= t["tp"] and low <= t["sl"]:
@@ -572,7 +462,7 @@ def build_daily_summary_message(trades, final_close):
 
   return f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
 ⏱ <b>Ngày kết thúc:</b> {day_str} (Khối lượng: <code>0.01 lot</code>)
-🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Dò nến 1m | SL = 1.5 x ATR | TP = 2.0 x ATR
+🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Nến chuẩn TradingView | SL = 1.5 x ATR | TP = 2.0 x ATR
 
 ━━━━━━━━━━━━━━━━━━━━
 <b>1️⃣ CHẾ ĐỘ 1 LỆNH DUY NHẤT (Single Position):</b>
