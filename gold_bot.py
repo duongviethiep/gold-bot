@@ -1,567 +1,383 @@
-from datetime import datetime
-import html
-import json
 import os
-import re
 import sys
+import json
 import requests
-from tradingview_ta import Interval, TA_Handler
+from datetime import datetime, timezone
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-TRADINGVIEW_SESSION_ID = os.environ.get("TRADINGVIEW_SESSION_ID", "")
+# Configurations & Environment Variables
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+CAPITAL_API_KEY = os.getenv("CAPITAL_API_KEY")
+CAPITAL_IDENTIFIER = os.getenv("CAPITAL_IDENTIFIER")
+CAPITAL_PASSWORD = os.getenv("CAPITAL_PASSWORD")
+CAPITAL_BASE_URL = os.getenv("CAPITAL_BASE_URL", "https://demo-api-capital.backend-capital.com")
+
+LOT_SIZE = 0.01
+LOT_VALUE_PER_DOLLAR = 1.0  # 0.01 lot XAU/USD: $1.00 biên độ = $1.00 P&L
 TRADES_FILE = "daily_trades.json"
 
-SYMBOL = "XAUUSD"
-EXCHANGE = "PEPPERSTONE"
-SCREENER = "cfd"
-
-
-# ==================== PLAYWRIGHT CHROMIUM TỐI ƯU SIÊU TỐC ====================
-def fetch_completed_candle_playwright(timeframe_str="1H"):
-  """Khởi chạy Chromium siêu nhẹ (chặn ảnh/font) để bóc tách chính xác 100% cây nến vừa đóng từ TradingView."""
-  from playwright.sync_api import sync_playwright
-
-  tf_code = "60" if timeframe_str == "1H" else "240"
-  target_url = (
-      f"https://www.tradingview.com/chart/?symbol={EXCHANGE}:{SYMBOL}&interval={tf_code}"
-  )
-  completed_candle = None
-
-  try:
-    with sync_playwright() as p:
-      browser = p.chromium.launch(
-          headless=True,
-          args=[
-              "--no-sandbox",
-              "--disable-setuid-sandbox",
-              "--disable-blink-features=AutomationControlled",
-              "--disable-gpu",
-          ],
-      )
-      context = browser.new_context(
-          user_agent=(
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-              " (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-          ),
-          viewport={"width": 1280, "height": 800},
-      )
-
-      # Nạp cookie đăng nhập tài khoản của anh
-      if TRADINGVIEW_SESSION_ID:
-        context.add_cookies([{
-            "name": "sessionid",
-            "value": TRADINGVIEW_SESSION_ID,
-            "domain": ".tradingview.com",
-            "path": "/",
-        }])
-
-      page = context.new_page()
-
-      # TĂNG TỐC 500%: Chặn toàn bộ hình ảnh, font chữ, media để biểu đồ tải trong 3 giây
-      page.route(
-          "**/*.{png,jpg,jpeg,gif,webp,svg,woff,woff2,ttf,otf,css}",
-          lambda route: route.abort(),
-      )
-
-      # Chặn bắt gói tin WebSocket biểu đồ
-      def on_websocket(ws):
-        def on_frame(payload):
-          nonlocal completed_candle
-          # Giải mã cả chuỗi dạng bytes lẫn string
-          text = (
-              payload.decode("utf-8", errors="ignore")
-              if isinstance(payload, bytes)
-              else str(payload)
-          )
-          if "timescale_update" in text:
-            pattern = r"~m~\d+~m~"
-            parts = [m for m in re.split(pattern, text) if m.strip()]
-            for part in parts:
-              try:
-                data = json.loads(part)
-                if data.get("m") == "timescale_update":
-                  series = data["p"][1]["s1"]["s"]
-                  if len(series) >= 2:
-                    # series[-2] là CÂY NẾN VỪA ĐÓNG HOÀN TOÀN TRÊN BIỂU ĐỒ!
-                    c = series[-2]["v"]
-                    completed_candle = {
-                        "open": float(c[1]),
-                        "high": float(c[2]),
-                        "low": float(c[3]),
-                        "close": float(c[4]),
-                        "volume": float(c[5]),
-                        "change": round(
-                            (float(c[4]) - float(c[1])) / float(c[1]) * 100, 2
-                        ),
-                    }
-              except Exception:
-                pass
-
-        ws.on("framereceived", on_frame)
-
-      page.on("websocket", on_websocket)
-
-      try:
-        # domcontentloaded nạp cực nhanh trong 2-3 giây
-        page.goto(target_url, wait_until="domcontentloaded", timeout=20000)
-        # Chờ tối đa 10 giây, hễ bắt được nến là thoát ngay lập tức
-        for _ in range(20):
-          if completed_candle:
-            break
-          page.wait_for_timeout(500)
-      except Exception as err:
-        print(f"Lỗi tải trang TradingView: {err}")
-
-      browser.close()
-  except Exception as e:
-    print(f"Lỗi Playwright: {e}")
-
-  return completed_candle
-
-
-def fetch_gold_data(timeframe_str):
-  interval_map = {
-      "1H": Interval.INTERVAL_1_HOUR,
-      "4H": Interval.INTERVAL_4_HOURS,
-  }
-  selected_interval = interval_map.get(timeframe_str, Interval.INTERVAL_1_HOUR)
-
-  handler = TA_Handler(
-      symbol=SYMBOL,
-      exchange=EXCHANGE,
-      screener=SCREENER,
-      interval=selected_interval,
-  )
-  handler.add_indicators(["ATR", "VWAP"])
-  analysis = handler.get_analysis()
-  ind = analysis.indicators
-
-  atr_val = ind.get("ATR")
-  if not atr_val or atr_val == 0.0:
-    atr_val = abs(ind.get("high", 0.0) - ind.get("low", 0.0))
-
-  vwap_val = ind.get("VWAP") or ind.get("VWMA") or ind.get("close", 0.0)
-
-  base_data = {
-      "timeframe": timeframe_str,
-      "close": ind.get("close", 0.0),
-      "open": ind.get("open", 0.0),
-      "high": ind.get("high", 0.0),
-      "low": ind.get("low", 0.0),
-      "change": ind.get("change", 0.0),
-      "volume": ind.get("volume", 0),
-      "rsi": ind.get("RSI", 50.0),
-      "macd": ind.get("MACD.macd", 0.0),
-      "macd_signal": ind.get("MACD.signal", 0.0),
-      "adx": ind.get("ADX", 0.0),
-      "atr": atr_val,
-      "vwap": vwap_val,
-      "ema20": ind.get("EMA20", 0.0),
-      "ema50": ind.get("EMA50", 0.0),
-      "ema200": ind.get("EMA200", 0.0),
-      "bb_upper": ind.get("BB.upper", 0.0),
-      "bb_lower": ind.get("BB.lower", 0.0),
-      "summary": analysis.summary.get("RECOMMENDATION", "NEUTRAL"),
-  }
-
-  # Trích xuất cây nến vừa đóng hoàn toàn từ Playwright Chromium
-  completed = fetch_completed_candle_playwright(timeframe_str)
-  if completed:
-    print(
-        "-> THÀNH CÔNG: Đã bóc tách nến vừa đóng từ TradingView Chromium:"
-        f" O={completed['open']}, H={completed['high']}, L={completed['low']},"
-        f" C={completed['close']}"
-    )
-    base_data["open"] = completed["open"]
-    base_data["high"] = completed["high"]
-    base_data["low"] = completed["low"]
-    base_data["close"] = completed["close"]
-    base_data["change"] = completed["change"]
-    base_data["volume"] = completed["volume"]
-  else:
-    print("-> CẢNH BÁO: Chưa bóc được nến đóng, đang dùng nến mặc định.")
-
-  return base_data
-
-
-# ==================== PHÂN TÍCH VÀ LẬP KẾ HOẠCH ====================
-def analyze_and_plan(d):
-  close, ema20, ema50 = d["close"], d["ema20"], d["ema50"]
-  rsi, macd = d["rsi"], d["macd"]
-  adx, atr, vwap = d.get("adx", 0.0), d.get("atr", 0.0), d.get("vwap", 0.0)
-  low, high = d["low"], d["high"]
-  atr = atr if atr > 0 else 5.0
-
-  if close > ema20 and ema20 > ema50:
-    trend = "Tăng (Giá vận động trên EMA20/50)"
-    action = "BUY"
-    support = (
-        round(ema20, 2)
-        if (ema20 > 0 and ema20 < close)
-        else round(min(low, close), 2)
-    )
-    resistance = (
-        round(max(high, close + 1.5 * atr), 2)
-        if high <= close
-        else round(high, 2)
-    )
-  elif close < ema20 and ema20 < ema50:
-    trend = "Giảm (Giá chịu áp lực dưới EMA20/50)"
-    action = "SELL"
-    resistance = (
-        round(ema20, 2)
-        if (ema20 > 0 and ema20 > close)
-        else round(max(high, close), 2)
-    )
-    support = (
-        round(min(low, close - 1.5 * atr), 2)
-        if low >= close
-        else round(low, 2)
-    )
-  else:
-    trend = "Sideway (Tích lũy giằng co quanh EMA20/50)"
-    action = "WAIT"
-    support = round(min(low, ema20) if ema20 > 0 else low, 2)
-    resistance = round(max(high, ema50) if ema50 > 0 else high, 2)
-
-  mom_rsi = "Quá mua" if rsi > 70 else ("Quá bán" if rsi < 30 else "Ổn định")
-  adx_desc = (
-      "Trend mạnh" if adx >= 25 else ("Sideway/Yếu" if adx < 20 else "Trung bình")
-  )
-  momentum = (
-      f"RSI {rsi:.1f} ({mom_rsi}) | MACD {macd:.2f} | ADX {adx:.1f}"
-      f" ({adx_desc})"
-  )
-  levels = (
-      f"Hỗ trợ: {support:.2f} | Kháng cự: {resistance:.2f} | VWAP: {vwap:.2f}"
-  )
-
-  trade_plan = None
-  hour_utc = datetime.utcnow().strftime("%H")
-  is_near_close = hour_utc in ["20", "21", "22"]
-
-  if action == "BUY" and (adx >= 20 or rsi >= 50) and not is_near_close:
-    entry = support
-    sl = round(entry - 1.5 * atr, 2)
-    tp = round(entry + 2.0 * atr, 2)
-    plan = (
-        f"Canh Mua tại hỗ trợ <b>{entry:.2f}</b> (SL: <code>{sl:.2f}</code>, TP:"
-        f" <code>{tp:.2f}</code>)"
-    )
-    trade_plan = {"type": "BUY", "entry": entry, "sl": sl, "tp": tp}
-  elif action == "SELL" and (adx >= 20 or rsi < 50) and not is_near_close:
-    entry = resistance
-    sl = round(entry + 1.5 * atr, 2)
-    tp = round(entry - 2.0 * atr, 2)
-    plan = (
-        f"Canh Bán tại kháng cự <b>{entry:.2f}</b> (SL: <code>{sl:.2f}</code>,"
-        f" TP: <code>{tp:.2f}</code>)"
-    )
-    trade_plan = {"type": "SELL", "entry": entry, "sl": sl, "tp": tp}
-  else:
-    plan = "Đứng ngoài quan sát, thị trường đang tích lũy thiếu lực bứt phá."
-
-  text = (
-      f"• <b>Xu hướng:</b> {trend}\n"
-      f"• <b>Động lượng:</b> {momentum}\n"
-      f"• <b>Vùng cản:</b> {levels}\n"
-      f"• <b>Kế hoạch:</b> {plan}"
-  )
-  return text, trade_plan
-
-
-def generate_ai_analysis(data):
-  text_plan, trade_plan = analyze_and_plan(data)
-  if not GEMINI_API_KEY:
-    return text_plan, trade_plan
-
-  prompt = f"""
-Bạn là chuyên gia phân tích kỹ thuật vàng (XAUUSD). Hãy viết nhận định CỰC KỲ NGẮN GỌN (đúng 4 gạch đầu dòng, không giải thích dài dòng):
-• Xu hướng: [Ngắn gọn 1 câu về trend và EMA20/50]
-• Động lượng: [RSI {data['rsi']:.1f}, MACD {data['macd']:.2f}, ADX {data['adx']:.1f} nói lên xung lực gì]
-• Vùng cản: [Hỗ trợ: X | Kháng cự: Y | VWAP: {data['vwap']:.2f}]
-• Kế hoạch: [Canh mua tại hỗ trợ (SL, TP) HOẶC Canh bán tại kháng cự (SL, TP) HOẶC Đứng ngoài quan sát nếu sideway. Không mua đuổi đỉnh / bán đuổi đáy].
-"""
-  headers = {
-      "Content-Type": "application/json",
-      "x-goog-api-key": GEMINI_API_KEY,
-  }
-  payload = {"contents": [{"parts": [{"text": prompt}]}]}
-
-  try:
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
-    response = requests.post(url, json=payload, headers=headers, timeout=10)
-    res_json = response.json()
-    if "candidates" in res_json and len(res_json["candidates"]) > 0:
-      return (
-          res_json["candidates"][0]["content"]["parts"][0]["text"].strip(),
-          trade_plan,
-      )
-  except Exception:
-    pass
-
-  return text_plan, trade_plan
-
-
-# ==================== BỘ QUẢN LÝ LỆNH ====================
-def load_trades():
-  today_str = datetime.now().strftime("%Y-%m-%d")
-  if os.path.exists(TRADES_FILE):
-    try:
-      with open(TRADES_FILE, "r") as f:
-        data = json.load(f)
-        if data.get("date") == today_str:
-          return data
-    except Exception:
-      pass
-  return {
-      "date": today_str,
-      "single_mode": {"current_trade": None, "closed_trades": []},
-      "multi_mode": {"open_trades": [], "closed_trades": []},
-  }
-
-
-def save_trades(data):
-  try:
-    with open(TRADES_FILE, "w") as f:
-      json.dump(data, f, indent=2)
-  except Exception as e:
-    print(f"Lỗi lưu file nhật ký: {e}")
-
-
-def update_trade_engine(market_data, trade_plan):
-  trades = load_trades()
-  high, low = market_data["high"], market_data["low"]
-  time_now_str = datetime.now().strftime("%H:%M")
-
-  def evaluate_trade(t):
-    if t["status"] == "Chờ đón":
-      if t["type"] == "BUY":
-        if low <= t["entry"]:
-          t["status"] = "Đang chạy"
-        elif high >= t["tp"]:
-          t["status"] = "Hụt lệnh"
-          t["pnl"] = 0.0
-          return True
-      elif t["type"] == "SELL":
-        if high >= t["entry"]:
-          t["status"] = "Đang chạy"
-        elif low <= t["tp"]:
-          t["status"] = "Hụt lệnh"
-          t["pnl"] = 0.0
-          return True
-
-    if t["status"] == "Đang chạy":
-      if t["type"] == "BUY":
-        if high >= t["tp"] and low <= t["sl"]:
-          t["status"] = "Chạm SL"
-          t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-          return True
-        elif high >= t["tp"]:
-          t["status"] = "Đạt TP"
-          t["pnl"] = round(t["tp"] - t["entry"], 2)
-          return True
-        elif low <= t["sl"]:
-          t["status"] = "Chạm SL"
-          t["pnl"] = round(-(t["entry"] - t["sl"]), 2)
-          return True
-      elif t["type"] == "SELL":
-        if low <= t["tp"] and high >= t["sl"]:
-          t["status"] = "Chạm SL"
-          t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-          return True
-        elif low <= t["tp"]:
-          t["status"] = "Đạt TP"
-          t["pnl"] = round(t["entry"] - t["tp"], 2)
-          return True
-        elif high >= t["sl"]:
-          t["status"] = "Chạm SL"
-          t["pnl"] = round(-(t["sl"] - t["entry"]), 2)
-          return True
-    return False
-
-  curr_s = trades["single_mode"]["current_trade"]
-  if curr_s and evaluate_trade(curr_s):
-    trades["single_mode"]["closed_trades"].append(curr_s)
-    trades["single_mode"]["current_trade"] = None
-
-  still_open_m = []
-  for t in trades["multi_mode"]["open_trades"]:
-    if evaluate_trade(t):
-      trades["multi_mode"]["closed_trades"].append(t)
-    else:
-      still_open_m.append(t)
-  trades["multi_mode"]["open_trades"] = still_open_m
-
-  if trade_plan:
-    new_item = {
-        "time": time_now_str,
-        "type": trade_plan["type"],
-        "entry": trade_plan["entry"],
-        "sl": trade_plan["sl"],
-        "tp": trade_plan["tp"],
-        "status": "Chờ đón",
-        "pnl": 0.0,
+def get_capital_session():
+    """Xác thực với Capital.com để lấy CST và X-SECURITY-TOKEN."""
+    url = f"{CAPITAL_BASE_URL}/api/v1/session"
+    headers = {
+        "X-CAP-API-KEY": CAPITAL_API_KEY,
+        "Content-Type": "application/json"
     }
-    if trades["single_mode"]["current_trade"] is None:
-      trades["single_mode"]["current_trade"] = dict(new_item)
+    payload = {
+        "identifier": CAPITAL_IDENTIFIER,
+        "password": CAPITAL_PASSWORD,
+        "encryptedPassword": False
+    }
+    
+    resp = requests.post(url, headers=headers, json=payload, timeout=15)
+    if resp.status_code != 200:
+        raise Exception(f"Đăng nhập Capital.com thất bại [{resp.status_code}]: {resp.text}")
+        
+    cst = resp.headers.get("CST")
+    security_token = resp.headers.get("X-SECURITY-TOKEN")
+    
+    if not cst or not security_token:
+        raise Exception("Không tìm thấy CST hoặc X-SECURITY-TOKEN trong phản hồi của Capital.com")
+        
+    return cst, security_token
 
-    trades["multi_mode"]["open_trades"].append(dict(new_item))
+def fetch_candles(cst, security_token, epic="GOLD", resolution="HOUR", max_bars=40):
+    """Lấy danh sách nến lịch sử từ Capital.com."""
+    url = f"{CAPITAL_BASE_URL}/api/v1/prices/{epic}"
+    headers = {
+        "CST": cst,
+        "X-SECURITY-TOKEN": security_token
+    }
+    params = {
+        "resolution": resolution,
+        "max": max_bars
+    }
+    
+    resp = requests.get(url, headers=headers, params=params, timeout=15)
+    if resp.status_code != 200:
+        raise Exception(f"Lỗi lấy giá [{resp.status_code}]: {resp.text}")
+        
+    data = resp.json()
+    prices = data.get("prices", [])
+    if len(prices) < 20:
+        raise Exception(f"Dữ liệu nến không đủ: {len(prices)} nến")
+        
+    candles = []
+    for p in prices:
+        o = (p["openPrice"]["bid"] + p["openPrice"]["ask"]) / 2.0
+        h = (p["highPrice"]["bid"] + p["highPrice"]["ask"]) / 2.0
+        l = (p["lowPrice"]["bid"] + p["lowPrice"]["ask"]) / 2.0
+        c = (p["closePrice"]["bid"] + p["closePrice"]["ask"]) / 2.0
+        candles.append({
+            "time_utc": p.get("snapshotTimeUTC", p.get("snapshotTime")),
+            "open": round(o, 2),
+            "high": round(h, 2),
+            "low": round(l, 2),
+            "close": round(c, 2),
+            "volume": p.get("lastTradedVolume", 0)
+        })
+    return candles
 
-  save_trades(trades)
-  return trades
-
-
-def build_daily_summary_message(trades, final_close):
-  day_str = datetime.now().strftime("%d/%m/%Y")
-
-  def finalize_list(current, closed):
-    res = [t for t in closed if t["status"] != "Hụt lệnh"]
-    if current:
-      c = dict(current)
-      if c["status"] == "Đang chạy":
-        c["status"] = "Chốt phiên"
-        c["pnl"] = (
-            round(final_close - c["entry"], 2)
-            if c["type"] == "BUY"
-            else round(c["entry"] - final_close, 2)
+def calculate_technical_indicators(candles):
+    """
+    Tính ATR(14), EMA20, EMA50, RSI(14), ADX(14).
+    Chỉ dùng các cây nến đã đóng hoàn chỉnh (loại bỏ nến [-1] đang chạy).
+    """
+    closed_candles = candles[:-1]
+    
+    closes = [c["close"] for c in closed_candles]
+    highs = [c["high"] for c in closed_candles]
+    lows = [c["low"] for c in closed_candles]
+    
+    def calc_ema(values, period):
+        k = 2 / (period + 1)
+        ema = [values[0]]
+        for val in values[1:]:
+            ema.append(val * k + ema[-1] * (1 - k))
+        return ema
+        
+    ema20 = calc_ema(closes, 20)[-1]
+    ema50 = calc_ema(closes, min(len(closes), 50))[-1] if len(closes) >= 50 else calc_ema(closes, 20)[-1]
+    
+    tr_list = []
+    for i in range(1, len(closed_candles)):
+        tr = max(
+            highs[i] - lows[i],
+            abs(highs[i] - closes[i-1]),
+            abs(lows[i] - closes[i-1])
         )
-        res.append(c)
-    return res
+        tr_list.append(tr)
+    atr14 = sum(tr_list[-14:]) / 14.0 if len(tr_list) >= 14 else sum(tr_list) / len(tr_list)
+    
+    gains, losses = [], []
+    for i in range(1, len(closes)):
+        diff = closes[i] - closes[i-1]
+        if diff >= 0:
+            gains.append(diff)
+            losses.append(0.0)
+        else:
+            gains.append(0.0)
+            losses.append(abs(diff))
+    avg_gain = sum(gains[-14:]) / 14.0
+    avg_loss = sum(losses[-14:]) / 14.0
+    rs = (avg_gain / avg_loss) if avg_loss != 0 else 100.0
+    rsi14 = 100.0 - (100.0 / (1.0 + rs))
+    
+    dm_plus, dm_minus = [], []
+    for i in range(1, len(closed_candles)):
+        up_move = highs[i] - highs[i-1]
+        down_move = lows[i-1] - lows[i]
+        dm_plus.append(up_move if up_move > down_move and up_move > 0 else 0.0)
+        dm_minus.append(down_move if down_move > up_move and down_move > 0 else 0.0)
+            
+    di_plus = (sum(dm_plus[-14:]) / (sum(tr_list[-14:]) or 1.0)) * 100.0
+    di_minus = (sum(dm_minus[-14:]) / (sum(tr_list[-14:]) or 1.0)) * 100.0
+    dx_den = di_plus + di_minus
+    adx14 = (abs(di_plus - di_minus) / dx_den * 100.0) if dx_den != 0 else 0.0
+    
+    last_closed = closed_candles[-1]
+    recent_highs = highs[-10:]
+    recent_lows = lows[-10:]
+    
+    return {
+        "candle": last_closed,
+        "ema20": round(ema20, 2),
+        "ema50": round(ema50, 2),
+        "atr14": round(atr14, 2),
+        "rsi14": round(rsi14, 1),
+        "adx14": round(adx14, 1),
+        "support": round(min(recent_lows), 2),
+        "resistance": round(max(recent_highs), 2)
+    }
 
-  s_list = finalize_list(
-      trades["single_mode"]["current_trade"],
-      trades["single_mode"]["closed_trades"],
-  )
+def generate_analysis(data):
+    """Tạo đúng 4 gạch đầu dòng cô đọng."""
+    c = data["candle"]
+    close = c["close"]
+    ema20 = data["ema20"]
+    ema50 = data["ema50"]
+    rsi = data["rsi14"]
+    adx = data["adx14"]
+    sup = data["support"]
+    res = data["resistance"]
+    atr = data["atr14"]
+    
+    if close > ema20 and ema20 > ema50:
+        trend = "Tăng mạnh (Trên EMA20 & EMA50)"
+        bias = "BUY"
+    elif close < ema20 and ema20 < ema50:
+        trend = "Giảm mạnh (Dưới EMA20 & EMA50)"
+        bias = "SELL"
+    elif close > ema20:
+        trend = "Tăng nhẹ / Phục hồi ngắn hạn"
+        bias = "BUY"
+    else:
+        trend = "Giảm nhẹ / Điều chỉnh ngắn hạn"
+        bias = "SELL"
+        
+    if adx < 20:
+        momentum = f"RSI {rsi} | Sideway tích lũy (ADX {adx} < 20 - Khuyến nghị đứng ngoài)"
+        is_choppy = True
+    else:
+        status = "Quá mua" if rsi > 70 else ("Quá bán" if rsi < 30 else "Trung tính")
+        momentum = f"RSI {rsi} ({status}) | Xu hướng có lực rõ (ADX {adx})"
+        is_choppy = False
+        
+    key_sr = f"Kháng cự: ${res} \vert{} Hỗ trợ: ${sup}"
+    
+    sl_dist = round(1.5 * atr, 2)
+    tp_dist = round(2.0 * atr, 2)
+    
+    if is_choppy:
+        action = "ĐỨNG NGOÀI (Né sideway, không vào lệnh vội)"
+        trade_signal = None
+    elif bias == "BUY":
+        entry = round(max(sup, close - round(0.5 * atr, 2)), 2)
+        sl = round(entry - sl_dist, 2)
+        tp = round(entry + tp_dist, 2)
+        action = f"Chờ Buy Limit quanh ${entry} (Không mua đuổi) | SL: ${sl} (-${sl_dist}) | TP: ${tp} (+${tp_dist})"
+        trade_signal = {"direction": "BUY", "entry": entry, "sl": sl, "tp": tp, "time": c["time_utc"]}
+    else:
+        entry = round(min(res, close + round(0.5 * atr, 2)), 2)
+        sl = round(entry + sl_dist, 2)
+        tp = round(entry - tp_dist, 2)
+        action = f"Chờ Sell Limit quanh ${entry} (Không bán đuổi) | SL: ${sl} (-${sl_dist}) | TP: ${tp} (+${tp_dist})"
+        trade_signal = {"direction": "SELL", "entry": entry, "sl": sl, "tp": tp, "time": c["time_utc"]}
+        
+    return {
+        "trend": trend,
+        "momentum": momentum,
+        "key_sr": key_sr,
+        "action": action,
+        "trade_signal": trade_signal
+    }
 
-  m_list = [
-      t for t in trades["multi_mode"]["closed_trades"] if t["status"] != "Hụt lệnh"
-  ]
-  for t in trades["multi_mode"]["open_trades"]:
-    if t["status"] == "Đang chạy":
-      c = dict(t)
-      c["status"] = "Chốt phiên"
-      c["pnl"] = (
-          round(final_close - c["entry"], 2)
-          if c["type"] == "BUY"
-          else round(c["entry"] - final_close, 2)
-      )
-      m_list.append(c)
+def format_telegram_message(tf, data, analysis):
+    c = data["candle"]
+    msg = (
+        f"📊 *XAU/USD ({tf}) - CÂY NẾN ĐÃ ĐÓNG*\n"
+        f"⏰ *Nến kết thúc:* `{c['time_utc']}` (UTC)\n"
+        f"💰 *O:* `{c['open']}` | *H:* `{c['high']}` | *L:* `{c['low']}` | *C:* `{c['close']}`\n\n"
+        f"• *Xu hướng:* {analysis['trend']}\n"
+        f"• *Động lực:* {analysis['momentum']}\n"
+        f"• *Vùng cản:* {analysis['key_sr']}\n"
+        f"• *Kế hoạch:* {analysis['action']}\n"
+        f"*(ATR: ${data['atr14']} | Khối lượng: 0.01 lot = $1/giá)*"
+    )
+    return msg
 
-  def stats(t_list):
-    tot = len(t_list)
-    wins = sum(1 for t in t_list if t["pnl"] > 0)
-    losses = sum(1 for t in t_list if t["pnl"] < 0)
-    pnl = sum(t["pnl"] for t in t_list)
-    wr = (wins / tot * 100) if tot > 0 else 0.0
-    return tot, wins, losses, pnl, wr
+def load_trades():
+    if os.path.exists(TRADES_FILE):
+        try:
+            with open(TRADES_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return {
+        "date": today_str,
+        "single_mode": {"current_trade": None, "closed_trades": []},
+        "multi_mode": {"open_trades": [], "closed_trades": []}
+    }
 
-  s_tot, s_win, s_loss, s_pnl, s_wr = stats(s_list)
-  m_tot, m_win, m_loss, m_pnl, m_wr = stats(m_list)
+def save_trades(trades):
+    with open(TRADES_FILE, "w") as f:
+        json.dump(trades, f, indent=2)
 
-  def render_detail(t_list):
-    if not t_list:
-      return "<i>• Không có lệnh khớp trong ngày (Thị trường sideway).</i>"
-    lines = []
-    for i, t in enumerate(t_list, 1):
-      icon = "✅" if t["pnl"] > 0 else ("❌" if t["pnl"] < 0 else "⚪")
-      sign = "+" if t["pnl"] > 0 else ""
-      lines.append(
-          f"{i}. [{t['time']}] <b>{t['type']}</b> {t['entry']:.2f} | TP:"
-          f" {t['tp']:.2f} | SL: {t['sl']:.2f} ➔ {t['status']} ({sign}{t['pnl']:.2f}"
-          f" USD) {icon}"
-      )
-    return "\n".join(lines)
+def evaluate_and_update_trades(trades, latest_candle, new_signal):
+    high, low = latest_candle["high"], latest_candle["low"]
+    
+    # Single Mode
+    curr = trades["single_mode"]["current_trade"]
+    if curr:
+        closed, pnl, outcome = False, 0.0, ""
+        if curr["direction"] == "BUY":
+            if low <= curr["sl"]:
+                closed, pnl, outcome = True, round((curr["sl"] - curr["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif high >= curr["tp"]:
+                closed, pnl, outcome = True, round((curr["tp"] - curr["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        elif curr["direction"] == "SELL":
+            if high >= curr["sl"]:
+                closed, pnl, outcome = True, round((curr["entry"] - curr["sl"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif low <= curr["tp"]:
+                closed, pnl, outcome = True, round((curr["entry"] - curr["tp"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+                
+        if closed:
+            curr["outcome"] = outcome
+            curr["pnl"] = pnl
+            trades["single_mode"]["closed_trades"].append(curr)
+            trades["single_mode"]["current_trade"] = None
 
-  s_sign = "+" if s_pnl > 0 else ""
-  m_sign = "+" if m_pnl > 0 else ""
+    if trades["single_mode"]["current_trade"] is None and new_signal:
+        trades["single_mode"]["current_trade"] = new_signal
+        
+    # Multi Mode
+    remaining_open = []
+    for t in trades["multi_mode"]["open_trades"]:
+        closed, pnl, outcome = False, 0.0, ""
+        if t["direction"] == "BUY":
+            if low <= t["sl"]:
+                closed, pnl, outcome = True, round((t["sl"] - t["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif high >= t["tp"]:
+                closed, pnl, outcome = True, round((t["tp"] - t["entry"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+        elif t["direction"] == "SELL":
+            if high >= t["sl"]:
+                closed, pnl, outcome = True, round((t["entry"] - t["sl"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_SL"
+            elif low <= t["tp"]:
+                closed, pnl, outcome = True, round((t["entry"] - t["tp"]) * LOT_VALUE_PER_DOLLAR, 2), "HIT_TP"
+                
+        if closed:
+            t["outcome"] = outcome
+            t["pnl"] = pnl
+            trades["multi_mode"]["closed_trades"].append(t)
+        else:
+            remaining_open.append(t)
+            
+    trades["multi_mode"]["open_trades"] = remaining_open
+    if new_signal:
+        trades["multi_mode"]["open_trades"].append(new_signal)
 
-  return f"""📋 <b>TỔNG KẾT GIAO DỊCH VÀNG CUỐI NGÀY (XAU/USD)</b>
-⏱ <b>Ngày kết thúc:</b> {day_str} (Khối lượng: <code>0.01 lot</code>)
-🎯 <b>Quy tắc:</b> Đón tại hỗ trợ/kháng cự | Nến chuẩn TradingView | SL = 1.5 x ATR | TP = 2.0 x ATR
+def generate_daily_summary(trades):
+    s_closed = trades["single_mode"]["closed_trades"]
+    m_closed = trades["multi_mode"]["closed_trades"]
+    
+    s_pnl = sum(t["pnl"] for t in s_closed)
+    s_wins = len([t for t in s_closed if t["pnl"] > 0])
+    s_winrate = (s_wins / len(s_closed) * 100) if s_closed else 0.0
+    
+    m_pnl = sum(t["pnl"] for t in m_closed)
+    m_wins = len([t for t in m_closed if t["pnl"] > 0])
+    m_winrate = (m_wins / len(m_closed) * 100) if m_closed else 0.0
+    
+    s_sign = "+$" if s_pnl >= 0 else "-$"
+    m_sign = "+$" if m_pnl >= 0 else "-$"
+    
+    msg = (
+        f"📋 *TỔNG KẾT PHIÊN GIAO DỊCH VÀNG (05:00 VN / 22:00 UTC)*\n"
+        f"📅 Ngày: `{trades.get('date', datetime.now(timezone.utc).strftime('%Y-%m-%d'))}`\n"
+        f"📊 Khối lượng chuẩn hóa: `0.01 lot` ($1 giá = $1.00)\n\n"
+        f"1️⃣ *Chế độ Đơn lệnh (Single Position - Tối đa 1 lệnh)*:\n"
+        f"• Tổng lệnh đã chốt: `{len(s_closed)}` (Thắng: `{s_wins}` - Tỉ lệ: `{s_winrate:.1f}%`)\n"
+        f"• Tổng P&L: `{s_sign}{abs(s_pnl):.2f}`\n\n"
+        f"2️⃣ *Chế độ Đa lệnh (Multi Positions - Độc lập từng tín hiệu)*:\n"
+        f"• Tổng lệnh đã chốt: `{len(m_closed)}` (Thắng: `{m_wins}` - Tỉ lệ: `{m_winrate:.1f}%`)\n"
+        f"• Tổng P&L: `{m_sign}{abs(m_pnl):.2f}`\n"
+        f"• Lệnh đang còn mở: `{len(trades['multi_mode']['open_trades'])}`\n"
+    )
+    return msg
 
-━━━━━━━━━━━━━━━━━━━━
-<b>1️⃣ CHẾ ĐỘ 1 LỆNH DUY NHẤT (Single Position):</b>
-• <b>Tổng lệnh:</b> {s_tot} | <b>Thắng:</b> {s_win} ✅ | <b>Thua:</b> {s_loss} ❌ | <b>Tỷ lệ thắng:</b> {s_wr:.1f}%
-• <b>Tổng P&L:</b> <code>{s_sign}{s_pnl:.2f} USD</code> ({s_sign}{s_pnl*10:.0f} pips)
+def send_telegram(text):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram chưa cấu hình Token/Chat ID. Nội dung tin nhắn:")
+        print(text)
+        return
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    resp = requests.post(url, json=payload, timeout=10)
+    print("Telegram Status:", resp.status_code)
 
-<b>Chi tiết lệnh:</b>
-{render_detail(s_list)}
-
-━━━━━━━━━━━━━━━━━━━━
-<b>2️⃣ CHẾ ĐỘ ĐA LỆNH ĐỘC LẬP (Multi Positions):</b>
-• <b>Tổng lệnh:</b> {m_tot} | <b>Thắng:</b> {m_win} ✅ | <b>Thua:</b> {m_loss} ❌ | <b>Tỷ lệ thắng:</b> {m_wr:.1f}%
-• <b>Tổng P&L:</b> <code>{m_sign}{m_pnl:.2f} USD</code> ({m_sign}{m_pnl*10:.0f} pips)
-
-<b>Chi tiết lệnh:</b>
-{render_detail(m_list)}
-"""
-
-
-# ==================== GỬI THÔNG BÁO TELEGRAM ====================
-def send_telegram_raw(text):
-  url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-  chat_ids = [cid.strip() for cid in TELEGRAM_CHAT_ID.split(",") if cid.strip()]
-  for cid in chat_ids:
-    try:
-      res = requests.post(
-          url,
-          json={"chat_id": cid, "text": text, "parse_mode": "HTML"},
-          timeout=15,
-      )
-      if res.status_code != 200:
-        requests.post(
-            url, json={"chat_id": cid, "text": html.unescape(text)}, timeout=15
-        )
-    except Exception as e:
-      print(f"Lỗi gửi tới ID {cid}: {e}")
-
-
-def send_telegram(data, ai_opinion):
-  time_now = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-  message_html = f"""📊 <b>BÁO CÁO GIÁ VÀNG XAU/USD ({data['timeframe']})</b>
-⏱ <b>Thời điểm đóng nến:</b> {time_now}
-
-💰 <b>Chỉ số giá:</b>
-• Giá đóng cửa: <code>{data['close']:.2f} USD</code> ({data['change']:+.2f}%)
-• Biên độ nến: <code>{data['low']:.2f}</code> – <code>{data['high']:.2f}</code>
-
-📈 <b>Chỉ báo kỹ thuật:</b>
-• RSI (14): <code>{data['rsi']:.2f}</code> | ADX (14): <code>{data['adx']:.2f}</code>
-• MACD: <code>{data['macd']:.2f}</code> | Signal: <code>{data['macd_signal']:.2f}</code>
-• EMA: EMA20: <code>{data['ema20']:.2f}</code> | EMA50: <code>{data['ema50']:.2f}</code> | EMA200: <code>{data['ema200']:.2f}</code>
-• ATR: <code>{data['atr']:.2f} USD</code> | VWAP: <code>{data['vwap']:.2f} USD</code>
-• Tín hiệu kỹ thuật: <b>{data['summary']}</b>
-
-🧠 <b>Nhận định & Phân tích chuyên sâu:</b>
-{ai_opinion}
-"""
-  send_telegram_raw(message_html)
-
+def main():
+    if not CAPITAL_API_KEY or not CAPITAL_IDENTIFIER or not CAPITAL_PASSWORD:
+        print("Lỗi: Thiếu CAPITAL_API_KEY, CAPITAL_IDENTIFIER hoặc CAPITAL_PASSWORD")
+        sys.exit(1)
+        
+    cst, sec_token = get_capital_session()
+    
+    # 1. Quét khung 1H
+    candles_1h = fetch_candles(cst, sec_token, epic="GOLD", resolution="HOUR", max_bars=40)
+    data_1h = calculate_technical_indicators(candles_1h)
+    analysis_1h = generate_analysis(data_1h)
+    msg_1h = format_telegram_message("1H", data_1h, analysis_1h)
+    send_telegram(msg_1h)
+    
+    # Cập nhật nhật ký lệnh
+    trades = load_trades()
+    evaluate_and_update_trades(trades, data_1h["candle"], analysis_1h["trade_signal"])
+    save_trades(trades)
+    
+    # 2. Quét khung 4H khi đóng nến (01, 05, 09, 13, 17, 21 UTC)
+    now_utc = datetime.now(timezone.utc)
+    if now_utc.hour in [1, 5, 9, 13, 17, 21]:
+        candles_4h = fetch_candles(cst, sec_token, epic="GOLD", resolution="HOUR_4", max_bars=40)
+        data_4h = calculate_technical_indicators(candles_4h)
+        analysis_4h = generate_analysis(data_4h)
+        msg_4h = format_telegram_message("4H", data_4h, analysis_4h)
+        send_telegram(msg_4h)
+        
+    # 3. Báo cáo tổng kết ngày lúc 22:00 UTC (05:00 sáng VN)
+    if now_utc.hour == 22:
+        summary_msg = generate_daily_summary(trades)
+        send_telegram(summary_msg)
+        new_trades = {
+            "date": now_utc.strftime("%Y-%m-%d"),
+            "single_mode": {"current_trade": trades["single_mode"]["current_trade"], "closed_trades": []},
+            "multi_mode": {"open_trades": trades["multi_mode"]["open_trades"], "closed_trades": []}
+        }
+        save_trades(new_trades)
 
 if __name__ == "__main__":
-  tf = sys.argv[1] if len(sys.argv) > 1 else "1H"
-  market_data = fetch_gold_data(tf)
-
-  if tf == "1H":
-    analysis_text, trade_plan = generate_ai_analysis(market_data)
-    trade_state = update_trade_engine(market_data, trade_plan)
-    send_telegram(market_data, analysis_text)
-
-    hour_utc = datetime.utcnow().strftime("%H")
-    if hour_utc == "22" or (len(sys.argv) > 2 and sys.argv[2] == "summary"):
-      summary_card = build_daily_summary_message(
-          trade_state, market_data["close"]
-      )
-      send_telegram_raw(summary_card)
-      if os.path.exists(TRADES_FILE):
-        try:
-          os.remove(TRADES_FILE)
-        except Exception:
-          pass
-  else:
-    analysis_text, _ = generate_ai_analysis(market_data)
-    send_telegram(market_data, analysis_text)
+    main()
