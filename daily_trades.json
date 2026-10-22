@@ -113,6 +113,15 @@
         "tp": 4083.57,
         "status": "Ch\u1edd \u0111\u00f3n",
         "pnl": 0.0
+      },
+      {
+        "time": "06:52",
+        "type": "SELL",
+        "entry": 4114.0,
+        "sl": 4136.56,
+        "tp": 4083.92,
+        "status": "Ch\u1edd \u0111\u00f3n",
+        "pnl": 0.0
       }
     ],
     "closed_trades": [
@@ -189,5 +198,11 @@
         "pnl": 0.0
       }
     ]
+  },
+  "last_candle": {
+    "open": 4089.51,
+    "high": 4103.04,
+    "low": 4086.94,
+    "close": 4094.3
   }
 }
