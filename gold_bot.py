@@ -32,29 +32,22 @@ def create_tv_message(func, param_list):
 
 
 def fetch_tradingview_direct_bars(timeframe="60", n_bars=5):
-  """Kết nối vào wss://data.tradingview.com bằng sessionid chính chủ của anh."""
+  """Kết nối vào wss://data.tradingview.com với sessionid chính chủ của anh."""
   if not TRADINGVIEW_SESSION_ID:
     print("Cảnh báo: Chưa tìm thấy TRADINGVIEW_SESSION_ID trong Secrets!")
     return None
 
   try:
-    headers = {
-        "Origin": "https://www.tradingview.com",
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        ),
-        "Cookie": f"sessionid={TRADINGVIEW_SESSION_ID}",
-    }
+    # Sửa đúng chuẩn tham số origin và cookie của thư viện websocket-client
     ws = websocket.create_connection(
         "wss://data.tradingview.com/socket.io/websocket",
-        headers=headers,
+        origin="https://www.tradingview.com",
+        cookie=f"sessionid={TRADINGVIEW_SESSION_ID}",
         timeout=10,
     )
 
     chart_session = generate_tv_session()
-    # Xác thực bằng mã tài khoản chính chủ để không bị chặn IP
-    ws.send(create_tv_message("set_auth_token", [TRADINGVIEW_SESSION_ID]))
+    ws.send(create_tv_message("set_auth_token", ["unauthorized_user_token"]))
     ws.send(create_tv_message("chart_create_session", [chart_session, ""]))
 
     resolve_param = json.dumps({"symbol": SYMBOL_FULL, "adjustment": "splits"})
@@ -175,12 +168,19 @@ def fetch_gold_data(timeframe_str):
   # Lấy đúng cây nến vừa đóng trực tiếp từ biểu đồ TradingView
   completed = fetch_completed_candle_tradingview(timeframe_str)
   if completed:
+    print(
+        f"-> THÀNH CÔNG: Đã lấy nến vừa đóng từ TradingView: O={completed['open']},"
+        f" H={completed['high']}, L={completed['low']},"
+        f" C={completed['close']}"
+    )
     base_data["open"] = completed["open"]
     base_data["high"] = completed["high"]
     base_data["low"] = completed["low"]
     base_data["close"] = completed["close"]
     base_data["change"] = completed["change"]
     base_data["volume"] = completed["volume"]
+  else:
+    print("-> CẢNH BÁO: Chưa kết nối được WebSocket, đang dùng nến hiện tại.")
 
   return base_data
 
