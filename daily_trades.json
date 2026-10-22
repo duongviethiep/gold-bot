@@ -95,6 +95,15 @@
         "tp": 4085.01,
         "status": "Ch\u1edd \u0111\u00f3n",
         "pnl": 0.0
+      },
+      {
+        "time": "06:36",
+        "type": "SELL",
+        "entry": 4113.9,
+        "sl": 4136.46,
+        "tp": 4083.82,
+        "status": "Ch\u1edd \u0111\u00f3n",
+        "pnl": 0.0
       }
     ],
     "closed_trades": [
