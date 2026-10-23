@@ -298,17 +298,32 @@ def generate_daily_summary(trades):
 
 def send_telegram(text):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Telegram chưa cấu hình Token/Chat ID. Nội dung tin nhắn:")
+        print("Telegram chưa cấu hình Token/Chat ID. Nội dung:")
         print(text)
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    
+    # 1. Thử gửi với định dạng Markdown
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": text,
         "parse_mode": "Markdown"
     }
-    resp = requests.post(url, json=payload, timeout=10)
-    print("Telegram Status:", resp.status_code)
+    try:
+        resp = requests.post(url, json=payload, timeout=10)
+        print("Telegram Status (Markdown):", resp.status_code)
+        
+        # 2. Nếu Telegram từ chối (Status 400), tự động gửi lại dưới dạng văn bản thuần
+        if resp.status_code != 200:
+            print(f"Telegram từ chối Markdown ({resp.text}). Đang tự động gửi lại dạng Plain Text...")
+            payload_plain = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": text
+            }
+            resp_fallback = requests.post(url, json=payload_plain, timeout=10)
+            print("Telegram Fallback Status:", resp_fallback.status_code)
+    except Exception as e:
+        print(f"Lỗi kết nối Telegram: {e}")
 
 def main():
     # 1. Quét khung 1H trực tiếp từ TradingView
