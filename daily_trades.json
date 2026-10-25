@@ -3,10 +3,12 @@
   "single_mode": {
     "current_trade": {
       "direction": "SELL",
-      "entry": 4003.73,
-      "sl": 4026.23,
-      "tp": 3973.73,
-      "time": "2026-10-23 21:01:11"
+      "entry": 4001.58,
+      "sl": 4017.72,
+      "tp": 3980.06,
+      "status": "PENDING",
+      "pending_hours": 0,
+      "time": "2026-10-25 23:44:42"
     },
     "closed_trades": []
   },
@@ -17,105 +19,130 @@
         "entry": 4019.8,
         "sl": 4042.3,
         "tp": 3989.8,
-        "time": "2026-10-23 04:01:12"
+        "time": "2026-10-23 04:01:12",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4013.78,
         "sl": 4036.28,
         "tp": 3983.78,
-        "time": "2026-10-23 05:01:10"
+        "time": "2026-10-23 05:01:10",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4020.05,
         "sl": 4042.55,
         "tp": 3990.05,
-        "time": "2026-10-23 07:01:12"
+        "time": "2026-10-23 07:01:12",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4019.33,
         "sl": 4041.83,
         "tp": 3989.33,
-        "time": "2026-10-23 08:01:11"
+        "time": "2026-10-23 08:01:11",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4007.03,
         "sl": 4029.53,
         "tp": 3977.03,
-        "time": "2026-10-23 15:01:12"
+        "time": "2026-10-23 15:01:12",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4008.63,
         "sl": 4031.13,
         "tp": 3978.63,
-        "time": "2026-10-23 16:01:11"
+        "time": "2026-10-23 16:01:11",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4006.34,
         "sl": 4028.84,
         "tp": 3976.34,
-        "time": "2026-10-23 17:01:11"
+        "time": "2026-10-23 17:01:11",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4004.19,
         "sl": 4026.69,
         "tp": 3974.19,
-        "time": "2026-10-23 18:01:15"
+        "time": "2026-10-23 18:01:15",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4001.84,
         "sl": 4024.34,
         "tp": 3971.84,
-        "time": "2026-10-23 19:01:11"
+        "time": "2026-10-23 19:01:11",
+        "status": "ACTIVE",
+        "filled_time": "2026-10-25 23:44:42"
       },
       {
         "direction": "SELL",
         "entry": 4005.3,
         "sl": 4027.8,
         "tp": 3975.3,
-        "time": "2026-10-23 20:01:20"
+        "time": "2026-10-23 20:01:20",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4003.73,
         "sl": 4026.23,
         "tp": 3973.73,
-        "time": "2026-10-23 21:01:11"
+        "time": "2026-10-23 21:01:11",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4003.73,
         "sl": 4026.23,
         "tp": 3973.73,
-        "time": "2026-10-23 22:01:11"
+        "time": "2026-10-23 22:01:11",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4003.73,
         "sl": 4026.23,
         "tp": 3973.73,
-        "time": "2026-10-23 23:01:20"
+        "time": "2026-10-23 23:01:20",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4003.73,
         "sl": 4026.23,
         "tp": 3973.73,
-        "time": "2026-10-24 00:01:12"
+        "time": "2026-10-24 00:01:12",
+        "pending_hours": 1
       },
       {
         "direction": "SELL",
         "entry": 4003.73,
         "sl": 4026.23,
         "tp": 3973.73,
-        "time": "2026-10-24 01:01:11"
+        "time": "2026-10-24 01:01:11",
+        "pending_hours": 1
+      },
+      {
+        "direction": "SELL",
+        "entry": 4001.58,
+        "sl": 4017.72,
+        "tp": 3980.06,
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-10-25 23:44:42"
       }
     ],
     "closed_trades": []
