@@ -273,7 +273,6 @@ def load_trades():
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     default_data = {
         "date": today_str,
-        "last_update_id": 0,
         "single_mode": {"current_trade": None, "closed_trades": []},
         "multi_mode": {"open_trades": [], "closed_trades": []}
     }
@@ -286,8 +285,6 @@ def load_trades():
                         data["single_mode"] = {"current_trade": None, "closed_trades": []}
                     if "multi_mode" not in data or not isinstance(data["multi_mode"], dict):
                         data["multi_mode"] = {"open_trades": [], "closed_trades": []}
-                    if "last_update_id" not in data:
-                        data["last_update_id"] = 0
                     return data
         except Exception:
             pass
@@ -301,15 +298,7 @@ def save_trades(trades):
         print(f"Lỗi khi lưu trades: {e}")
 
 def process_single_order(trade, high, low, current_time_str=None, is_hourly_step=True):
-    """
-    Xử lý vòng đời chuẩn xác của 1 lệnh Limit qua biên độ (high, low):
-    1. Nếu đang PENDING (Chờ khớp):
-       - Phải chạm giá Entry (low <= entry với BUY, high >= entry với SELL) mới chuyển sang ACTIVE (Đã khớp).
-       - Nếu trong chính nhịp khớp đó mà giá quét lủng luôn SL -> tính HIT_SL.
-       - Nếu chưa chạm Entry mà giá đã chạy thẳng tới TP -> tính CANCELLED (hụt lệnh / lỡ sóng).
-    2. Nếu đã ACTIVE (Đã khớp từ trước):
-       - Kiểm tra chạm SL (HIT_SL) hoặc chạm TP (HIT_TP).
-    """
+    """Xử lý vòng đời chuẩn xác của 1 lệnh Limit qua biên độ (high, low)."""
     direction = trade["direction"]
     entry = trade["entry"]
     sl = trade["sl"]
@@ -661,30 +650,49 @@ def generate_daily_summary(trades):
     )
     return msg
 
-def check_telegram_command_requests(trades):
-    """Kiểm tra xem người dùng có gửi lệnh /check, /status, /lenh trên Telegram không."""
+def check_telegram_command_requests():
+    """
+    Đọc hàng đợi 20 tin nhắn mới nhất trên máy chủ Telegram và xác nhận đã đọc (acknowledge offset)
+    trực tiếp trên máy chủ Telegram để tránh xung đột git push mỗi phút.
+    """
     if not TELEGRAM_BOT_TOKEN:
         return False
-    last_id = trades.get("last_update_id", 0)
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
-    params = {"offset": last_id + 1, "timeout": 2}
+    params = {
+        "offset": -20,
+        "timeout": 2,
+        "allowed_updates": json.dumps(["message", "channel_post", "edited_message"])
+    }
     try:
         resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 409:
+            print("Phát hiện Webhook cũ đang chặn getUpdates, đang tự động xóa Webhook...")
+            requests.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/deleteWebhook", timeout=5)
+            resp = requests.get(url, params=params, timeout=10)
         if resp.status_code != 200:
+            print(f"Telegram getUpdates lỗi [{resp.status_code}]: {resp.text}")
             return False
         updates = resp.json().get("result", [])
+        print(f"Số tin nhắn mới trong hàng đợi Telegram: {len(updates)}")
+        if not updates:
+            return False
         found_command = False
-        max_id = last_id
+        max_id = 0
         for u in updates:
             uid = u.get("update_id", 0)
             if uid > max_id:
                 max_id = uid
-            msg_obj = u.get("message") or u.get("channel_post") or {}
+            msg_obj = u.get("message") or u.get("channel_post") or u.get("edited_message") or {}
             text = str(msg_obj.get("text", "")).strip().lower()
-            if any(cmd in text for cmd in ["/check", "/status", "/lenh", "check lệnh", "check lenh"]):
+            print(f" -> Đọc được tin nhắn [{uid}]: '{text}'")
+            if any(cmd in text for cmd in ["/check", "/status", "/lenh", "check"]):
                 found_command = True
-        if max_id > last_id:
-            trades["last_update_id"] = max_id
+        if max_id > 0:
+            # Xác nhận ngay với máy chủ Telegram là đã đọc hết đến max_id (Telegram tự xóa các tin <= max_id)
+            try:
+                requests.get(url, params={"offset": max_id + 1, "timeout": 1}, timeout=5)
+            except Exception:
+                pass
         return found_command
     except Exception as e:
         print(f"Lỗi khi kiểm tra lệnh Telegram: {e}")
@@ -720,12 +728,11 @@ def main():
     trades = load_trades()
     
     # Kiểm tra yêu cầu /check, /status, /lenh từ Telegram
-    has_tg_cmd = check_telegram_command_requests(trades)
+    has_tg_cmd = check_telegram_command_requests()
     is_manual_check = (BOT_MODE.lower() == "check") or ("--check" in sys.argv)
     is_poll_only = (BOT_MODE.lower() == "poll") or ("--poll" in sys.argv)
 
     if is_poll_only and not has_tg_cmd:
-        save_trades(trades)
         print("Không có lệnh /check mới từ Telegram.")
         return
 
@@ -784,7 +791,6 @@ def main():
             send_telegram(summary_msg)
             new_trades = {
                 "date": now_utc.strftime("%Y-%m-%d"),
-                "last_update_id": trades.get("last_update_id", 0),
                 "single_mode": {"current_trade": trades["single_mode"]["current_trade"], "closed_trades": []},
                 "multi_mode": {"open_trades": trades["multi_mode"]["open_trades"], "closed_trades": []}
             }
