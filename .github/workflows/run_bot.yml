@@ -2,6 +2,11 @@ name: XAUUSD Hourly Gold Bot
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Chế độ chạy: auto (định kỳ), check (báo cáo lệnh ngay), poll (quét lệnh /check từ Telegram)'
+        required: false
+        default: 'auto'
 
 jobs:
   run-bot:
@@ -19,12 +24,13 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install tradingview-ta requests
+          pip install requests
 
       - name: Run Gold Bot
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BOT_MODE: ${{ github.event.inputs.mode || 'auto' }}
         run: |
           python gold_bot.py
 
