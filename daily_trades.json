@@ -83,9 +83,10 @@
         "entry": 4006.9,
         "sl": 3984.44,
         "tp": 4036.84,
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 0,
-        "time": "2026-10-26 03:13:53"
+        "time": "2026-10-26 03:13:53",
+        "filled_time": "2026-10-26 03:15:45"
       }
     ],
     "closed_trades": [
