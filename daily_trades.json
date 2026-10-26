@@ -1,18 +1,18 @@
 {
   "date": "2026-10-26",
-  "last_signal_slot": "2026-10-26 04",
+  "last_signal_slot": "2026-10-26 05",
   "last_summary_date": null,
   "single_mode": {
     "current_trade": {
       "status": "PENDING",
       "pending_hours": 0,
-      "time": "2026-10-26 04:01:13",
-      "created_ts": 1792987273,
-      "atr": 12.33,
+      "time": "2026-10-26 05:01:13",
+      "created_ts": 1792990873,
+      "atr": 12.16,
       "direction": "BUY",
-      "entry": 4002.77,
-      "sl": 3984.27,
-      "tp": 4027.43
+      "entry": 4010.98,
+      "sl": 3992.74,
+      "tp": 4035.3
     },
     "closed_trades": []
   },
@@ -20,7 +20,7 @@
     "open_trades": [
       {
         "status": "PENDING",
-        "pending_hours": 1,
+        "pending_hours": 2,
         "time": "2026-10-26 03:34:40",
         "created_ts": 1792985680,
         "atr": 18.16,
