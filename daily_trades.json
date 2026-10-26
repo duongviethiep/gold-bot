@@ -1,6 +1,6 @@
 {
   "date": "2026-10-26",
-  "last_signal_slot": "2026-10-26 15",
+  "last_signal_slot": "2026-10-26 16",
   "last_summary_date": null,
   "single_mode": {
     "current_trade": null,
@@ -93,10 +93,10 @@
     ]
   },
   "counters": {
-    "hours_scanned": 7,
+    "hours_scanned": 8,
     "signals": 1,
     "choppy_skips": 0,
-    "counter_trend_skips": 6,
+    "counter_trend_skips": 7,
     "hedge_skipped": 1,
     "superseded": 0,
     "gap_skipped": 0
