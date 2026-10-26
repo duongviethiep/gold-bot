@@ -6,9 +6,10 @@
       "entry": 4004.48,
       "sl": 3985.89,
       "tp": 4029.26,
-      "status": "PENDING",
+      "status": "ACTIVE",
       "pending_hours": 0,
-      "time": "2026-10-26 03:11:41"
+      "time": "2026-10-26 03:11:41",
+      "filled_time": "2026-10-26 03:13:53"
     },
     "closed_trades": [
       {
@@ -59,16 +60,6 @@
       },
       {
         "direction": "SELL",
-        "entry": 3993.69,
-        "sl": 4013.21,
-        "tp": 3967.67,
-        "status": "ACTIVE",
-        "pending_hours": 0,
-        "time": "2026-10-26 02:01:13",
-        "filled_time": "2026-10-26 02:33:31"
-      },
-      {
-        "direction": "SELL",
         "entry": 4006.48,
         "sl": 4025.12,
         "tp": 3981.62,
@@ -82,9 +73,19 @@
         "entry": 4004.48,
         "sl": 3985.89,
         "tp": 4029.26,
+        "status": "ACTIVE",
+        "pending_hours": 0,
+        "time": "2026-10-26 03:11:41",
+        "filled_time": "2026-10-26 03:13:53"
+      },
+      {
+        "direction": "BUY",
+        "entry": 4006.9,
+        "sl": 3984.44,
+        "tp": 4036.84,
         "status": "PENDING",
         "pending_hours": 0,
-        "time": "2026-10-26 03:11:41"
+        "time": "2026-10-26 03:13:53"
       }
     ],
     "closed_trades": [
@@ -100,6 +101,19 @@
         "closed_time": "2026-10-26 03:06:17",
         "outcome": "HIT_SL",
         "pnl": -19.84
+      },
+      {
+        "direction": "SELL",
+        "entry": 3993.69,
+        "sl": 4013.21,
+        "tp": 3967.67,
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-10-26 02:01:13",
+        "filled_time": "2026-10-26 02:33:31",
+        "closed_time": "2026-10-26 03:13:53",
+        "outcome": "HIT_SL",
+        "pnl": -19.52
       }
     ]
   },
