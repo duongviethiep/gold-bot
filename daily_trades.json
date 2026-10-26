@@ -1,1 +1,35 @@
-   {"date":"2026-10-26","last_signal_slot":null,"last_summary_date":null,"single_mode":{"current_trade":null,"closed_trades":[]},"multi_mode":{"open_trades":[],"closed_trades":[]}}
+{
+  "date": "2026-10-26",
+  "last_signal_slot": "2026-10-26 03",
+  "last_summary_date": null,
+  "single_mode": {
+    "current_trade": {
+      "status": "PENDING",
+      "pending_hours": 0,
+      "time": "2026-10-26 03:34:40",
+      "created_ts": 1792985680,
+      "atr": 18.16,
+      "direction": "BUY",
+      "entry": 4004.95,
+      "sl": 3977.71,
+      "tp": 4041.27
+    },
+    "closed_trades": []
+  },
+  "multi_mode": {
+    "open_trades": [
+      {
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-10-26 03:34:40",
+        "created_ts": 1792985680,
+        "atr": 18.16,
+        "direction": "BUY",
+        "entry": 4004.95,
+        "sl": 3977.71,
+        "tp": 4041.27
+      }
+    ],
+    "closed_trades": []
+  }
+}
