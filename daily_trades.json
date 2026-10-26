@@ -1,7 +1,15 @@
 {
   "date": "2026-10-23",
   "single_mode": {
-    "current_trade": null,
+    "current_trade": {
+      "direction": "BUY",
+      "entry": 4004.48,
+      "sl": 3985.89,
+      "tp": 4029.26,
+      "status": "PENDING",
+      "pending_hours": 0,
+      "time": "2026-10-26 03:11:41"
+    },
     "closed_trades": [
       {
         "direction": "SELL",
@@ -68,6 +76,15 @@
         "pending_hours": 0,
         "time": "2026-10-26 03:01:13",
         "filled_time": "2026-10-26 03:06:17"
+      },
+      {
+        "direction": "BUY",
+        "entry": 4004.48,
+        "sl": 3985.89,
+        "tp": 4029.26,
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-10-26 03:11:41"
       }
     ],
     "closed_trades": [
