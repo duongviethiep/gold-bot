@@ -886,7 +886,7 @@ def format_active_trade_item(idx, t, current_price, now_str=None):
     return (
         f"{idx}. {icon} {direction} · {_levels(t)}\n"
         f"   ↳ {' · '.join(parts)}\n"
-        f"   ↳ P&L {fmt_usd(fpnl)} ({fmt_r(_r_of(fpnl, t))}) · Cách SL {to_sl:.2f} · Cách TP {to_tp:.2f}"
+        f"   ↳ P&L {fmt_usd(fpnl)} ({fmt_r(_r_of(fpnl, t))})"
     )
 
 
