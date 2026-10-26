@@ -1,2 +1,3 @@
 trade_id,mode,direction,outcome,signal_time_utc,filled_time_utc,closed_time_utc,entry,sl,tp,exit_price,risk_usd,pnl_usd,r_multiple,minutes_to_fill,minutes_in_trade,mfe_usd,mae_usd,atr,atr_source,atr_proxy,adx,rsi,regime,with_trend,session,hour_utc,weekday
 1792990873_BUY,single,BUY,HIT_SL,2026-10-26 05:01:13,2026-10-26 05:27:16,2026-10-26 13:54:17,4010.98,3992.74,4035.3,3992.74,18.24,-18.24,-1.0,26.1,507.0,7.81,19.11,12.16,legacy,,,,,,ASIA,5,0
+1792998073_SELL,multi,SELL,HIT_TP,2026-10-26 07:01:13,2026-10-26 07:35:19,2026-10-26 13:59:17,4011.16,4027.21,3989.76,3989.76,16.05,21.4,1.333,34.1,384.0,22.45,7.63,10.7,legacy,,,,,,LONDON,7,0
