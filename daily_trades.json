@@ -21,7 +21,7 @@
   "multi_mode": {
     "open_trades": [
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 3,
         "time": "2026-10-26 03:34:40",
         "created_ts": 1792985680,
@@ -29,7 +29,9 @@
         "direction": "BUY",
         "entry": 4004.95,
         "sl": 3977.71,
-        "tp": 4041.27
+        "tp": 4041.27,
+        "filled_ts": 1792995678,
+        "filled_time": "2026-10-26 06:21:18"
       }
     ],
     "closed_trades": []
