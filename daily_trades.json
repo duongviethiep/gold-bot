@@ -34,7 +34,7 @@
         "filled_time": "2026-10-26 06:21:18"
       },
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-10-26 07:01:13",
         "created_ts": 1792998073,
@@ -42,7 +42,9 @@
         "direction": "SELL",
         "entry": 4011.16,
         "sl": 4027.21,
-        "tp": 3989.76
+        "tp": 3989.76,
+        "filled_ts": 1793000119,
+        "filled_time": "2026-10-26 07:35:19"
       }
     ],
     "closed_trades": []
