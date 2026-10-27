@@ -4,7 +4,7 @@
   "last_summary_date": "2026-10-26",
   "single_mode": {
     "current_trade": {
-      "status": "PENDING",
+      "status": "ACTIVE",
       "pending_hours": 0,
       "time": "2026-10-27 00:01:13",
       "created_ts": 1793059273,
@@ -19,7 +19,9 @@
       "direction": "SELL",
       "entry": 4011.05,
       "sl": 4028.17,
-      "tp": 3988.23
+      "tp": 3988.23,
+      "filled_ts": 1793059637,
+      "filled_time": "2026-10-27 00:07:17"
     },
     "closed_trades": []
   },
