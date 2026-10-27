@@ -1,25 +1,25 @@
 {
   "date": "2026-10-26",
-  "last_signal_slot": "2026-10-27 20",
+  "last_signal_slot": "2026-10-27 21",
   "last_summary_date": "2026-10-26",
   "single_mode": {
     "current_trade": {
       "status": "PENDING",
       "pending_hours": 0,
-      "time": "2026-10-27 20:01:19",
-      "created_ts": 1793131279,
-      "atr": 11.74,
+      "time": "2026-10-27 21:01:14",
+      "created_ts": 1793134874,
+      "atr": 11.86,
       "atr_source": "ATR14",
       "atr_proxy": 24.5,
       "adx": 29.7,
-      "rsi": 69.3,
+      "rsi": 69.2,
       "regime": "TREND_UP",
       "with_trend": true,
-      "session": "NY",
+      "session": "LATE",
       "direction": "BUY",
-      "entry": 4055.66,
-      "sl": 4038.05,
-      "tp": 4079.14
+      "entry": 4055.58,
+      "sl": 4037.79,
+      "tp": 4079.3
     },
     "closed_trades": [
       {
@@ -98,12 +98,12 @@
     ]
   },
   "counters": {
-    "hours_scanned": 35,
-    "signals": 14,
+    "hours_scanned": 36,
+    "signals": 15,
     "choppy_skips": 6,
     "counter_trend_skips": 15,
     "hedge_skipped": 10,
     "superseded": 0,
-    "gap_skipped": 3
+    "gap_skipped": 4
   }
 }
