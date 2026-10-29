@@ -3,34 +3,10 @@
   "last_signal_slot": "2026-10-29 00",
   "last_summary_date": "2026-10-28",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-10-28 20:01:17",
-      "created_ts": 1793217677,
-      "atr": 14.81,
-      "atr_source": "ATR14",
-      "atr_proxy": 11.63,
-      "adx": 22.6,
-      "rsi": 65.3,
-      "regime": "TREND_UP",
-      "with_trend": true,
-      "session": "NY",
-      "direction": "BUY",
-      "entry": 4068.76,
-      "sl": 4046.55,
-      "tp": 4098.38,
-      "filled_ts": 1793217977,
-      "filled_time": "2026-10-28 20:06:17",
-      "mfe": 14.13,
-      "mae": 17.9
-    },
-    "closed_trades": []
-  },
-  "multi_mode": {
-    "open_trades": [
+    "current_trade": null,
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-10-28 20:01:17",
         "created_ts": 1793217677,
@@ -49,8 +25,16 @@
         "filled_ts": 1793217977,
         "filled_time": "2026-10-28 20:06:17",
         "mfe": 14.13,
-        "mae": 17.9
-      },
+        "mae": 22.57,
+        "closed_ts": 1793232436,
+        "closed_time": "2026-10-29 00:07:16",
+        "outcome": "HIT_SL",
+        "pnl": -22.21
+      }
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [
       {
         "status": "ACTIVE",
         "pending_hours": 0,
@@ -71,7 +55,7 @@
         "filled_ts": 1793225958,
         "filled_time": "2026-10-28 22:19:18",
         "mfe": 0.0,
-        "mae": 10.06
+        "mae": 14.73
       },
       {
         "status": "PENDING",
@@ -92,7 +76,34 @@
         "tp": 4076.13
       }
     ],
-    "closed_trades": []
+    "closed_trades": [
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-10-28 20:01:17",
+        "created_ts": 1793217677,
+        "atr": 14.81,
+        "atr_source": "ATR14",
+        "atr_proxy": 11.63,
+        "adx": 22.6,
+        "rsi": 65.3,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "NY",
+        "direction": "BUY",
+        "entry": 4068.76,
+        "sl": 4046.55,
+        "tp": 4098.38,
+        "filled_ts": 1793217977,
+        "filled_time": "2026-10-28 20:06:17",
+        "mfe": 14.13,
+        "mae": 22.57,
+        "closed_ts": 1793232436,
+        "closed_time": "2026-10-29 00:07:16",
+        "outcome": "HIT_SL",
+        "pnl": -22.21
+      }
+    ]
   },
   "counters": {
     "hours_scanned": 63,
