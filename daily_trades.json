@@ -3,28 +3,7 @@
   "last_signal_slot": "2026-11-03 12",
   "last_summary_date": "2026-11-02",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-03 09:01:14",
-      "created_ts": 1793696474,
-      "atr": 13.64,
-      "atr_source": "ATR14",
-      "atr_proxy": 21.43,
-      "adx": 22.6,
-      "rsi": 34.2,
-      "regime": "TREND_DOWN",
-      "with_trend": true,
-      "session": "LONDON",
-      "direction": "SELL",
-      "entry": 3903.64,
-      "sl": 3924.1,
-      "tp": 3876.36,
-      "filled_ts": 1793697075,
-      "filled_time": "2026-11-03 09:11:15",
-      "mfe": 0.0,
-      "mae": 6.77
-    },
+    "current_trade": null,
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -51,6 +30,32 @@
         "closed_time": "2026-11-03 08:46:20",
         "outcome": "HIT_TP",
         "pnl": 28.5
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-03 09:01:14",
+        "created_ts": 1793696474,
+        "atr": 13.64,
+        "atr_source": "ATR14",
+        "atr_proxy": 21.43,
+        "adx": 22.6,
+        "rsi": 34.2,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3903.64,
+        "sl": 3924.1,
+        "tp": 3876.36,
+        "filled_ts": 1793697075,
+        "filled_time": "2026-11-03 09:11:15",
+        "mfe": 4.72,
+        "mae": 21.04,
+        "closed_ts": 1793710099,
+        "closed_time": "2026-11-03 12:48:19",
+        "outcome": "HIT_SL",
+        "pnl": -20.46
       }
     ]
   },
@@ -76,10 +81,12 @@
         "filled_ts": 1793685978,
         "filled_time": "2026-11-03 06:06:18",
         "mfe": 27.97,
-        "mae": 0.0
-      },
+        "mae": 1.28
+      }
+    ],
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-03 09:01:14",
         "created_ts": 1793696474,
@@ -97,11 +104,14 @@
         "tp": 3876.36,
         "filled_ts": 1793697075,
         "filled_time": "2026-11-03 09:11:15",
-        "mfe": 0.0,
-        "mae": 6.77
+        "mfe": 4.72,
+        "mae": 21.04,
+        "closed_ts": 1793710099,
+        "closed_time": "2026-11-03 12:48:19",
+        "outcome": "HIT_SL",
+        "pnl": -20.46
       }
-    ],
-    "closed_trades": []
+    ]
   },
   "counters": {
     "hours_scanned": 147,
