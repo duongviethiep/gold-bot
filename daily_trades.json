@@ -79,7 +79,7 @@
         "mae": 0.0
       },
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 1,
         "time": "2026-11-04 11:01:27",
         "created_ts": 1793790087,
@@ -94,7 +94,9 @@
         "direction": "BUY",
         "entry": 4037.52,
         "sl": 4009.98,
-        "tp": 4074.24
+        "tp": 4074.24,
+        "filled_ts": 1793794042,
+        "filled_time": "2026-11-04 12:07:22"
       }
     ],
     "closed_trades": [
