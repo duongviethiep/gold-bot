@@ -3,28 +3,7 @@
   "last_signal_slot": "2026-11-05 15",
   "last_summary_date": "2026-11-04",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-05 15:01:19",
-      "created_ts": 1793890879,
-      "atr": 18.61,
-      "atr_source": "ATR14",
-      "atr_proxy": 26.96,
-      "adx": 44.1,
-      "rsi": 58.9,
-      "regime": "TREND_UP",
-      "with_trend": true,
-      "session": "OVERLAP",
-      "direction": "BUY",
-      "entry": 4104.56,
-      "sl": 4076.65,
-      "tp": 4141.78,
-      "filled_ts": 1793891239,
-      "filled_time": "2026-11-05 15:07:19",
-      "mfe": 4.1,
-      "mae": 18.53
-    },
+    "current_trade": null,
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -77,13 +56,9 @@
         "closed_time": "2026-11-05 14:44:20",
         "outcome": "HIT_SL",
         "pnl": -27.33
-      }
-    ]
-  },
-  "multi_mode": {
-    "open_trades": [
+      },
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-05 15:01:19",
         "created_ts": 1793890879,
@@ -102,9 +77,16 @@
         "filled_ts": 1793891239,
         "filled_time": "2026-11-05 15:07:19",
         "mfe": 4.1,
-        "mae": 18.53
+        "mae": 28.2,
+        "closed_ts": 1793894182,
+        "closed_time": "2026-11-05 15:56:22",
+        "outcome": "HIT_SL",
+        "pnl": -27.91
       }
-    ],
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [],
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -209,6 +191,32 @@
         "closed_time": "2026-11-05 15:54:23",
         "outcome": "HIT_SL",
         "pnl": -28.41
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-05 15:01:19",
+        "created_ts": 1793890879,
+        "atr": 18.61,
+        "atr_source": "ATR14",
+        "atr_proxy": 26.96,
+        "adx": 44.1,
+        "rsi": 58.9,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "OVERLAP",
+        "direction": "BUY",
+        "entry": 4104.56,
+        "sl": 4076.65,
+        "tp": 4141.78,
+        "filled_ts": 1793891239,
+        "filled_time": "2026-11-05 15:07:19",
+        "mfe": 4.1,
+        "mae": 28.2,
+        "closed_ts": 1793894182,
+        "closed_time": "2026-11-05 15:56:22",
+        "outcome": "HIT_SL",
+        "pnl": -27.91
       }
     ]
   },
