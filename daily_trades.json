@@ -1,25 +1,25 @@
 {
   "date": "2026-11-04",
-  "last_signal_slot": "2026-11-05 03",
+  "last_signal_slot": "2026-11-05 04",
   "last_summary_date": "2026-11-04",
   "single_mode": {
     "current_trade": {
       "status": "PENDING",
       "pending_hours": 0,
-      "time": "2026-11-05 03:01:13",
-      "created_ts": 1793847673,
-      "atr": 18.67,
+      "time": "2026-11-05 04:01:19",
+      "created_ts": 1793851279,
+      "atr": 18.65,
       "atr_source": "ATR14",
-      "atr_proxy": 30.57,
-      "adx": 54.3,
-      "rsi": 82.3,
+      "atr_proxy": 34.13,
+      "adx": 56.1,
+      "rsi": 82.7,
       "regime": "TREND_UP",
       "with_trend": true,
       "session": "ASIA",
       "direction": "BUY",
-      "entry": 4122.42,
-      "sl": 4094.41,
-      "tp": 4159.76
+      "entry": 4131.28,
+      "sl": 4103.31,
+      "tp": 4168.58
     },
     "closed_trades": [
       {
@@ -54,7 +54,7 @@
     "open_trades": [
       {
         "status": "PENDING",
-        "pending_hours": 1,
+        "pending_hours": 2,
         "time": "2026-11-05 02:01:15",
         "created_ts": 1793844075,
         "atr": 18.94,
@@ -69,6 +69,24 @@
         "entry": 4115.08,
         "sl": 4086.67,
         "tp": 4152.96
+      },
+      {
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-11-05 04:01:19",
+        "created_ts": 1793851279,
+        "atr": 18.65,
+        "atr_source": "ATR14",
+        "atr_proxy": 34.13,
+        "adx": 56.1,
+        "rsi": 82.7,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "ASIA",
+        "direction": "BUY",
+        "entry": 4131.28,
+        "sl": 4103.31,
+        "tp": 4168.58
       }
     ],
     "closed_trades": [
@@ -127,8 +145,8 @@
     ]
   },
   "counters": {
-    "hours_scanned": 185,
-    "signals": 92,
+    "hours_scanned": 186,
+    "signals": 93,
     "choppy_skips": 45,
     "counter_trend_skips": 48,
     "hedge_skipped": 10,
