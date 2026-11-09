@@ -3,34 +3,10 @@
   "last_signal_slot": "2026-11-09 00",
   "last_summary_date": "2026-11-06",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-06 19:01:14",
-      "created_ts": 1793991674,
-      "atr": 17.86,
-      "atr_source": "ATR14",
-      "atr_proxy": 13.2,
-      "adx": 21.1,
-      "rsi": 53.3,
-      "regime": "TREND_UP",
-      "with_trend": true,
-      "session": "NY",
-      "direction": "BUY",
-      "entry": 4070.09,
-      "sl": 4043.3,
-      "tp": 4105.81,
-      "filled_ts": 1793992638,
-      "filled_time": "2026-11-06 19:17:18",
-      "mfe": 1.21,
-      "mae": 15.18
-    },
-    "closed_trades": []
-  },
-  "multi_mode": {
-    "open_trades": [
+    "current_trade": null,
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-06 19:01:14",
         "created_ts": 1793991674,
@@ -48,11 +24,45 @@
         "tp": 4105.81,
         "filled_ts": 1793992638,
         "filled_time": "2026-11-06 19:17:18",
-        "mfe": 1.21,
-        "mae": 15.18
+        "mfe": 40.23,
+        "mae": 15.18,
+        "closed_ts": 1794186037,
+        "closed_time": "2026-11-09 01:00:37",
+        "outcome": "HIT_TP",
+        "pnl": 35.72
       }
-    ],
-    "closed_trades": []
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [],
+    "closed_trades": [
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-06 19:01:14",
+        "created_ts": 1793991674,
+        "atr": 17.86,
+        "atr_source": "ATR14",
+        "atr_proxy": 13.2,
+        "adx": 21.1,
+        "rsi": 53.3,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "NY",
+        "direction": "BUY",
+        "entry": 4070.09,
+        "sl": 4043.3,
+        "tp": 4105.81,
+        "filled_ts": 1793992638,
+        "filled_time": "2026-11-06 19:17:18",
+        "mfe": 40.23,
+        "mae": 15.18,
+        "closed_ts": 1794186037,
+        "closed_time": "2026-11-09 01:00:37",
+        "outcome": "HIT_TP",
+        "pnl": 35.72
+      }
+    ]
   },
   "counters": {
     "hours_scanned": 230,
