@@ -3,28 +3,7 @@
   "last_signal_slot": "2026-11-09 07",
   "last_summary_date": "2026-11-06",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-09 06:01:12",
-      "created_ts": 1794204072,
-      "atr": 17.29,
-      "atr_source": "ATR14",
-      "atr_proxy": 28.73,
-      "adx": 23.8,
-      "rsi": 63.3,
-      "regime": "TREND_UP",
-      "with_trend": true,
-      "session": "ASIA",
-      "direction": "BUY",
-      "entry": 4116.33,
-      "sl": 4090.4,
-      "tp": 4150.91,
-      "filled_ts": 1794205642,
-      "filled_time": "2026-11-09 06:27:22",
-      "mfe": 0.0,
-      "mae": 14.52
-    },
+    "current_trade": null,
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -51,6 +30,32 @@
         "closed_time": "2026-11-09 01:00:37",
         "outcome": "HIT_TP",
         "pnl": 35.72
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-09 06:01:12",
+        "created_ts": 1794204072,
+        "atr": 17.29,
+        "atr_source": "ATR14",
+        "atr_proxy": 28.73,
+        "adx": 23.8,
+        "rsi": 63.3,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "ASIA",
+        "direction": "BUY",
+        "entry": 4116.33,
+        "sl": 4090.4,
+        "tp": 4150.91,
+        "filled_ts": 1794205642,
+        "filled_time": "2026-11-09 06:27:22",
+        "mfe": 0.0,
+        "mae": 26.2,
+        "closed_ts": 1794210380,
+        "closed_time": "2026-11-09 07:46:20",
+        "outcome": "HIT_SL",
+        "pnl": -25.93
       }
     ]
   },
@@ -76,7 +81,7 @@
         "filled_ts": 1794193522,
         "filled_time": "2026-11-09 03:05:22",
         "mfe": 7.53,
-        "mae": 15.0
+        "mae": 26.68
       },
       {
         "status": "ACTIVE",
@@ -96,7 +101,9 @@
         "sl": 4076.46,
         "tp": 4137.46,
         "filled_ts": 1794208579,
-        "filled_time": "2026-11-09 07:16:19"
+        "filled_time": "2026-11-09 07:16:19",
+        "mfe": 0.0,
+        "mae": 12.47
       }
     ],
     "closed_trades": [
