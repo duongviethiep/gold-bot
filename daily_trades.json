@@ -1,6 +1,6 @@
 {
   "date": "2026-11-06",
-  "last_signal_slot": "2026-11-09 07",
+  "last_signal_slot": "2026-11-09 08",
   "last_summary_date": "2026-11-06",
   "single_mode": {
     "current_trade": null,
@@ -81,7 +81,7 @@
         "filled_ts": 1794208579,
         "filled_time": "2026-11-09 07:16:19",
         "mfe": 0.0,
-        "mae": 15.29
+        "mae": 16.16
       }
     ],
     "closed_trades": [
@@ -140,10 +140,10 @@
     ]
   },
   "counters": {
-    "hours_scanned": 237,
+    "hours_scanned": 238,
     "signals": 114,
     "choppy_skips": 52,
-    "counter_trend_skips": 71,
+    "counter_trend_skips": 72,
     "hedge_skipped": 10,
     "superseded": 0,
     "gap_skipped": 72
