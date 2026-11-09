@@ -60,30 +60,7 @@
     ]
   },
   "multi_mode": {
-    "open_trades": [
-      {
-        "status": "ACTIVE",
-        "pending_hours": 0,
-        "time": "2026-11-09 07:01:12",
-        "created_ts": 1794207672,
-        "atr": 17.43,
-        "atr_source": "ATR14",
-        "atr_proxy": 28.17,
-        "adx": 22.7,
-        "rsi": 57.5,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "BUY",
-        "entry": 4102.6,
-        "sl": 4076.46,
-        "tp": 4137.46,
-        "filled_ts": 1794208579,
-        "filled_time": "2026-11-09 07:16:19",
-        "mfe": 24.09,
-        "mae": 16.16
-      }
-    ],
+    "open_trades": [],
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -136,6 +113,32 @@
         "closed_time": "2026-11-09 07:48:18",
         "outcome": "HIT_SL",
         "pnl": -29.25
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-09 07:01:12",
+        "created_ts": 1794207672,
+        "atr": 17.43,
+        "atr_source": "ATR14",
+        "atr_proxy": 28.17,
+        "adx": 22.7,
+        "rsi": 57.5,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "BUY",
+        "entry": 4102.6,
+        "sl": 4076.46,
+        "tp": 4137.46,
+        "filled_ts": 1794208579,
+        "filled_time": "2026-11-09 07:16:19",
+        "mfe": 36.95,
+        "mae": 16.16,
+        "closed_ts": 1794253398,
+        "closed_time": "2026-11-09 19:43:18",
+        "outcome": "HIT_TP",
+        "pnl": 34.86
       }
     ]
   },
