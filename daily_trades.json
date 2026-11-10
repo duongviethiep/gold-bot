@@ -1,6 +1,6 @@
 {
   "date": "2026-11-09",
-  "last_signal_slot": "2026-11-10 08",
+  "last_signal_slot": "2026-11-10 09",
   "last_summary_date": "2026-11-09",
   "single_mode": {
     "current_trade": null,
@@ -34,30 +34,7 @@
     ]
   },
   "multi_mode": {
-    "open_trades": [
-      {
-        "status": "ACTIVE",
-        "pending_hours": 1,
-        "time": "2026-11-10 01:01:16",
-        "created_ts": 1794272476,
-        "atr": 15.98,
-        "atr_source": "ATR14",
-        "atr_proxy": 15.9,
-        "adx": 21.2,
-        "rsi": 57.2,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "ASIA",
-        "direction": "BUY",
-        "entry": 4122.4,
-        "sl": 4098.43,
-        "tp": 4154.36,
-        "filled_ts": 1794276438,
-        "filled_time": "2026-11-10 02:07:18",
-        "mfe": 3.09,
-        "mae": 12.86
-      }
-    ],
+    "open_trades": [],
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -84,13 +61,39 @@
         "closed_time": "2026-11-10 03:44:19",
         "outcome": "HIT_SL",
         "pnl": -24.34
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 1,
+        "time": "2026-11-10 01:01:16",
+        "created_ts": 1794272476,
+        "atr": 15.98,
+        "atr_source": "ATR14",
+        "atr_proxy": 15.9,
+        "adx": 21.2,
+        "rsi": 57.2,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "ASIA",
+        "direction": "BUY",
+        "entry": 4122.4,
+        "sl": 4098.43,
+        "tp": 4154.36,
+        "filled_ts": 1794276438,
+        "filled_time": "2026-11-10 02:07:18",
+        "mfe": 3.09,
+        "mae": 25.81,
+        "closed_ts": 1794301274,
+        "closed_time": "2026-11-10 09:01:14",
+        "outcome": "HIT_SL",
+        "pnl": -23.97
       }
     ]
   },
   "counters": {
-    "hours_scanned": 260,
+    "hours_scanned": 261,
     "signals": 120,
-    "choppy_skips": 68,
+    "choppy_skips": 69,
     "counter_trend_skips": 72,
     "hedge_skipped": 10,
     "superseded": 0,
