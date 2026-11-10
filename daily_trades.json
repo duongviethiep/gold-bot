@@ -23,7 +23,7 @@
       "filled_ts": 1794261636,
       "filled_time": "2026-11-09 22:00:36",
       "mfe": 7.67,
-      "mae": 12.04
+      "mae": 13.72
     },
     "closed_trades": []
   },
@@ -49,10 +49,10 @@
         "filled_ts": 1794261636,
         "filled_time": "2026-11-09 22:00:36",
         "mfe": 7.67,
-        "mae": 12.04
+        "mae": 13.72
       },
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 1,
         "time": "2026-11-10 01:01:16",
         "created_ts": 1794272476,
@@ -67,7 +67,9 @@
         "direction": "BUY",
         "entry": 4122.4,
         "sl": 4098.43,
-        "tp": 4154.36
+        "tp": 4154.36,
+        "filled_ts": 1794276438,
+        "filled_time": "2026-11-10 02:07:18"
       }
     ],
     "closed_trades": []
