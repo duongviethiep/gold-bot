@@ -3,29 +3,35 @@
   "last_signal_slot": "2026-11-11 01",
   "last_summary_date": "2026-11-10",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-10 18:01:32",
-      "created_ts": 1794333692,
-      "atr": 17.01,
-      "atr_source": "ATR14",
-      "atr_proxy": 39.38,
-      "adx": 31.6,
-      "rsi": 24.3,
-      "regime": "TREND_DOWN",
-      "with_trend": true,
-      "session": "NY",
-      "direction": "SELL",
-      "entry": 4024.65,
-      "sl": 4050.17,
-      "tp": 3990.63,
-      "filled_ts": 1794335600,
-      "filled_time": "2026-11-10 18:33:20",
-      "mfe": 0.0,
-      "mae": 15.52
-    },
-    "closed_trades": []
+    "current_trade": null,
+    "closed_trades": [
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-10 18:01:32",
+        "created_ts": 1794333692,
+        "atr": 17.01,
+        "atr_source": "ATR14",
+        "atr_proxy": 39.38,
+        "adx": 31.6,
+        "rsi": 24.3,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "NY",
+        "direction": "SELL",
+        "entry": 4024.65,
+        "sl": 4050.17,
+        "tp": 3990.63,
+        "filled_ts": 1794335600,
+        "filled_time": "2026-11-10 18:33:20",
+        "mfe": 0.0,
+        "mae": 26.57,
+        "closed_ts": 1794361340,
+        "closed_time": "2026-11-11 01:42:20",
+        "outcome": "HIT_SL",
+        "pnl": -25.52
+      }
+    ]
   },
   "multi_mode": {
     "open_trades": [
@@ -49,7 +55,7 @@
         "filled_ts": 1794335839,
         "filled_time": "2026-11-10 18:37:19",
         "mfe": 2.64,
-        "mae": 11.35
+        "mae": 22.4
       },
       {
         "status": "ACTIVE",
@@ -70,8 +76,8 @@
         "tp": 4005.68,
         "filled_ts": 1794353236,
         "filled_time": "2026-11-10 23:27:16",
-        "mfe": 5.94,
-        "mae": 2.65
+        "mfe": 11.05,
+        "mae": 13.7
       }
     ],
     "closed_trades": []
