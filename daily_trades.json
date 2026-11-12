@@ -3,24 +3,7 @@
   "last_signal_slot": "2026-11-12 08",
   "last_summary_date": "2026-11-11",
   "single_mode": {
-    "current_trade": {
-      "status": "PENDING",
-      "pending_hours": 0,
-      "time": "2026-11-12 08:01:16",
-      "created_ts": 1794470476,
-      "atr": 13.51,
-      "atr_source": "ATR14",
-      "atr_proxy": 21.1,
-      "adx": 42.2,
-      "rsi": 25.4,
-      "regime": "TREND_DOWN",
-      "with_trend": true,
-      "session": "LONDON",
-      "direction": "SELL",
-      "entry": 3967.13,
-      "sl": 3987.4,
-      "tp": 3940.11
-    },
+    "current_trade": null,
     "closed_trades": [
       {
         "status": "CLOSED",
