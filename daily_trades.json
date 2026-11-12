@@ -22,7 +22,7 @@
       "tp": 3960.26,
       "filled_ts": 1794442877,
       "filled_time": "2026-11-12 00:21:17",
-      "mfe": 0.0,
+      "mfe": 9.91,
       "mae": 16.16
     },
     "closed_trades": [
@@ -75,11 +75,13 @@
         "tp": 3960.26,
         "filled_ts": 1794442877,
         "filled_time": "2026-11-12 00:21:17",
-        "mfe": 0.0,
+        "mfe": 9.91,
         "mae": 16.16
-      },
+      }
+    ],
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-12 01:01:13",
         "created_ts": 1794445273,
@@ -97,11 +99,14 @@
         "tp": 3974.45,
         "filled_ts": 1794445578,
         "filled_time": "2026-11-12 01:06:18",
-        "mfe": 15.94,
-        "mae": 0.0
+        "mfe": 26.06,
+        "mae": 0.0,
+        "closed_ts": 1794451398,
+        "closed_time": "2026-11-12 02:43:18",
+        "outcome": "HIT_TP",
+        "pnl": 25.48
       }
-    ],
-    "closed_trades": []
+    ]
   },
   "counters": {
     "hours_scanned": 300,
