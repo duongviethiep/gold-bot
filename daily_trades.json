@@ -22,7 +22,7 @@
       "tp": 3856.13,
       "filled_ts": 1794578776,
       "filled_time": "2026-11-13 14:06:16",
-      "mfe": 16.09,
+      "mfe": 19.86,
       "mae": 7.45
     },
     "closed_trades": [
@@ -101,7 +101,7 @@
         "tp": 3866.05,
         "filled_ts": 1794570922,
         "filled_time": "2026-11-13 11:55:22",
-        "mfe": 24.85,
+        "mfe": 28.62,
         "mae": 0.0
       },
       {
@@ -123,11 +123,11 @@
         "tp": 3856.13,
         "filled_ts": 1794578776,
         "filled_time": "2026-11-13 14:06:16",
-        "mfe": 16.09,
+        "mfe": 19.86,
         "mae": 7.45
       },
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-11-13 16:01:13",
         "created_ts": 1794585673,
@@ -142,7 +142,9 @@
         "direction": "SELL",
         "entry": 3878.89,
         "sl": 3903.31,
-        "tp": 3846.33
+        "tp": 3846.33,
+        "filled_ts": 1794586158,
+        "filled_time": "2026-11-13 16:09:18"
       }
     ],
     "closed_trades": [
