@@ -23,7 +23,7 @@
       "filled_ts": 1794839538,
       "filled_time": "2026-11-16 14:32:18",
       "mfe": 0.0,
-      "mae": 11.99
+      "mae": 14.07
     },
     "closed_trades": [
       {
@@ -84,28 +84,6 @@
     "open_trades": [
       {
         "status": "ACTIVE",
-        "pending_hours": 0,
-        "time": "2026-11-16 07:01:13",
-        "created_ts": 1794812473,
-        "atr": 18.64,
-        "atr_source": "ATR14",
-        "atr_proxy": 15.27,
-        "adx": 36.5,
-        "rsi": 37.4,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "SELL",
-        "entry": 3857.41,
-        "sl": 3885.37,
-        "tp": 3820.13,
-        "filled_ts": 1794814156,
-        "filled_time": "2026-11-16 07:29:16",
-        "mfe": 2.19,
-        "mae": 26.14
-      },
-      {
-        "status": "ACTIVE",
         "pending_hours": 1,
         "time": "2026-11-16 09:01:14",
         "created_ts": 1794819674,
@@ -124,7 +102,7 @@
         "filled_ts": 1794825565,
         "filled_time": "2026-11-16 10:39:25",
         "mfe": 5.57,
-        "mae": 16.78
+        "mae": 18.86
       },
       {
         "status": "ACTIVE",
@@ -144,7 +122,9 @@
         "sl": 3901.03,
         "tp": 3844.54,
         "filled_ts": 1794839779,
-        "filled_time": "2026-11-16 14:36:19"
+        "filled_time": "2026-11-16 14:36:19",
+        "mfe": 0.0,
+        "mae": 7.44
       }
     ],
     "closed_trades": [
@@ -251,6 +231,32 @@
         "closed_time": "2026-11-16 10:54:30",
         "outcome": "HIT_SL",
         "pnl": -26.74
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-16 07:01:13",
+        "created_ts": 1794812473,
+        "atr": 18.64,
+        "atr_source": "ATR14",
+        "atr_proxy": 15.27,
+        "adx": 36.5,
+        "rsi": 37.4,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3857.41,
+        "sl": 3885.37,
+        "tp": 3820.13,
+        "filled_ts": 1794814156,
+        "filled_time": "2026-11-16 07:29:16",
+        "mfe": 2.19,
+        "mae": 28.22,
+        "closed_ts": 1794839837,
+        "closed_time": "2026-11-16 14:37:17",
+        "outcome": "HIT_SL",
+        "pnl": -27.96
       }
     ]
   },
