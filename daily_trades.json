@@ -3,34 +3,10 @@
   "last_signal_slot": "2026-11-16 05",
   "last_summary_date": "2026-11-13",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-13 14:01:15",
-      "created_ts": 1794578475,
-      "atr": 15.64,
-      "atr_source": "ATR14",
-      "atr_proxy": 13.03,
-      "adx": 34.8,
-      "rsi": 35.2,
-      "regime": "TREND_DOWN",
-      "with_trend": true,
-      "session": "OVERLAP",
-      "direction": "SELL",
-      "entry": 3887.41,
-      "sl": 3910.87,
-      "tp": 3856.13,
-      "filled_ts": 1794578776,
-      "filled_time": "2026-11-13 14:06:16",
-      "mfe": 27.28,
-      "mae": 13.22
-    },
-    "closed_trades": []
-  },
-  "multi_mode": {
-    "open_trades": [
+    "current_trade": null,
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-13 14:01:15",
         "created_ts": 1794578475,
@@ -48,9 +24,17 @@
         "tp": 3856.13,
         "filled_ts": 1794578776,
         "filled_time": "2026-11-13 14:06:16",
-        "mfe": 27.28,
-        "mae": 13.22
-      },
+        "mfe": 37.32,
+        "mae": 13.22,
+        "closed_ts": 1794808019,
+        "closed_time": "2026-11-16 05:46:59",
+        "outcome": "HIT_TP",
+        "pnl": 31.28
+      }
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [
       {
         "status": "ACTIVE",
         "pending_hours": 0,
@@ -70,7 +54,7 @@
         "tp": 3846.33,
         "filled_ts": 1794586158,
         "filled_time": "2026-11-13 16:09:18",
-        "mfe": 18.76,
+        "mfe": 28.8,
         "mae": 21.74
       }
     ],
@@ -100,6 +84,32 @@
         "closed_time": "2026-11-16 01:04:24",
         "outcome": "HIT_TP",
         "pnl": 30.12
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-13 14:01:15",
+        "created_ts": 1794578475,
+        "atr": 15.64,
+        "atr_source": "ATR14",
+        "atr_proxy": 13.03,
+        "adx": 34.8,
+        "rsi": 35.2,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "OVERLAP",
+        "direction": "SELL",
+        "entry": 3887.41,
+        "sl": 3910.87,
+        "tp": 3856.13,
+        "filled_ts": 1794578776,
+        "filled_time": "2026-11-13 14:06:16",
+        "mfe": 37.32,
+        "mae": 13.22,
+        "closed_ts": 1794808019,
+        "closed_time": "2026-11-16 05:46:59",
+        "outcome": "HIT_TP",
+        "pnl": 31.28
       }
     ]
   },
