@@ -22,35 +22,13 @@
       "tp": 3856.13,
       "filled_ts": 1794578776,
       "filled_time": "2026-11-13 14:06:16",
-      "mfe": 19.86,
+      "mfe": 27.28,
       "mae": 13.22
     },
     "closed_trades": []
   },
   "multi_mode": {
     "open_trades": [
-      {
-        "status": "ACTIVE",
-        "pending_hours": 0,
-        "time": "2026-11-13 11:01:12",
-        "created_ts": 1794567672,
-        "atr": 15.06,
-        "atr_source": "ATR14",
-        "atr_proxy": 14.48,
-        "adx": 34.3,
-        "rsi": 38.4,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "SELL",
-        "entry": 3896.17,
-        "sl": 3918.76,
-        "tp": 3866.05,
-        "filled_ts": 1794570922,
-        "filled_time": "2026-11-13 11:55:22",
-        "mfe": 28.62,
-        "mae": 4.46
-      },
       {
         "status": "ACTIVE",
         "pending_hours": 0,
@@ -70,7 +48,7 @@
         "tp": 3856.13,
         "filled_ts": 1794578776,
         "filled_time": "2026-11-13 14:06:16",
-        "mfe": 19.86,
+        "mfe": 27.28,
         "mae": 13.22
       },
       {
@@ -92,11 +70,38 @@
         "tp": 3846.33,
         "filled_ts": 1794586158,
         "filled_time": "2026-11-13 16:09:18",
-        "mfe": 9.64,
+        "mfe": 18.76,
         "mae": 21.74
       }
     ],
-    "closed_trades": []
+    "closed_trades": [
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-13 11:01:12",
+        "created_ts": 1794567672,
+        "atr": 15.06,
+        "atr_source": "ATR14",
+        "atr_proxy": 14.48,
+        "adx": 34.3,
+        "rsi": 38.4,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3896.17,
+        "sl": 3918.76,
+        "tp": 3866.05,
+        "filled_ts": 1794570922,
+        "filled_time": "2026-11-13 11:55:22",
+        "mfe": 36.04,
+        "mae": 4.46,
+        "closed_ts": 1794791064,
+        "closed_time": "2026-11-16 01:04:24",
+        "outcome": "HIT_TP",
+        "pnl": 30.12
+      }
+    ]
   },
   "counters": {
     "hours_scanned": 348,
