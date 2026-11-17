@@ -1,37 +1,10 @@
 {
-  "date": "2026-11-16",
-  "last_signal_slot": "2026-11-17 21",
-  "last_summary_date": "2026-11-16",
+  "date": "2026-11-17",
+  "last_signal_slot": "2026-11-17 22",
+  "last_summary_date": "2026-11-17",
   "single_mode": {
     "current_trade": null,
-    "closed_trades": [
-      {
-        "status": "CLOSED",
-        "pending_hours": 0,
-        "time": "2026-11-16 14:01:15",
-        "created_ts": 1794837675,
-        "atr": 15.76,
-        "atr_source": "ATR14",
-        "atr_proxy": 13.38,
-        "adx": 36.7,
-        "rsi": 44.7,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "OVERLAP",
-        "direction": "SELL",
-        "entry": 3871.56,
-        "sl": 3895.2,
-        "tp": 3840.04,
-        "filled_ts": 1794839538,
-        "filled_time": "2026-11-16 14:32:18",
-        "mfe": 31.69,
-        "mae": 14.07,
-        "closed_ts": 1794922756,
-        "closed_time": "2026-11-17 13:39:16",
-        "outcome": "HIT_TP",
-        "pnl": 31.52
-      }
-    ]
+    "closed_trades": []
   },
   "multi_mode": {
     "open_trades": [
@@ -58,39 +31,12 @@
         "mae": 18.86
       }
     ],
-    "closed_trades": [
-      {
-        "status": "CLOSED",
-        "pending_hours": 0,
-        "time": "2026-11-16 21:01:15",
-        "created_ts": 1794862875,
-        "atr": 15.71,
-        "atr_source": "ATR14",
-        "atr_proxy": 10.12,
-        "adx": 27.1,
-        "rsi": 41.5,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "LATE",
-        "direction": "SELL",
-        "entry": 3857.07,
-        "sl": 3880.64,
-        "tp": 3825.65,
-        "filled_ts": 1794865157,
-        "filled_time": "2026-11-16 21:39:17",
-        "mfe": 8.27,
-        "mae": 23.91,
-        "closed_ts": 1794892938,
-        "closed_time": "2026-11-17 05:22:18",
-        "outcome": "HIT_SL",
-        "pnl": -23.57
-      }
-    ]
+    "closed_trades": []
   },
   "counters": {
-    "hours_scanned": 392,
+    "hours_scanned": 393,
     "signals": 213,
-    "choppy_skips": 92,
+    "choppy_skips": 93,
     "counter_trend_skips": 87,
     "hedge_skipped": 10,
     "superseded": 0,
