@@ -50,9 +50,11 @@
         "filled_time": "2026-11-16 10:39:25",
         "mfe": 25.15,
         "mae": 18.86
-      },
+      }
+    ],
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-16 21:01:15",
         "created_ts": 1794862875,
@@ -71,10 +73,13 @@
         "filled_ts": 1794865157,
         "filled_time": "2026-11-16 21:39:17",
         "mfe": 8.27,
-        "mae": 18.38
+        "mae": 23.91,
+        "closed_ts": 1794892938,
+        "closed_time": "2026-11-17 05:22:18",
+        "outcome": "HIT_SL",
+        "pnl": -23.57
       }
-    ],
-    "closed_trades": []
+    ]
   },
   "counters": {
     "hours_scanned": 376,
