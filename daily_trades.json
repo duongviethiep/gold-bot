@@ -125,24 +125,6 @@
         "filled_time": "2026-11-18 12:09:15",
         "mfe": 28.7,
         "mae": 14.5
-      },
-      {
-        "status": "PENDING",
-        "pending_hours": 1,
-        "time": "2026-11-18 14:01:13",
-        "created_ts": 1795010473,
-        "atr": 18.4,
-        "atr_source": "ATR14",
-        "atr_proxy": 32.7,
-        "adx": 33.1,
-        "rsi": 41.8,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "OVERLAP",
-        "direction": "SELL",
-        "entry": 3791.86,
-        "sl": 3819.46,
-        "tp": 3755.06
       }
     ],
     "closed_trades": [
