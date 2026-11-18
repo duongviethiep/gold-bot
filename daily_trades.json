@@ -7,9 +7,10 @@
     "closed_trades": []
   },
   "multi_mode": {
-    "open_trades": [
+    "open_trades": [],
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 1,
         "time": "2026-11-16 09:01:14",
         "created_ts": 1794819674,
@@ -27,11 +28,14 @@
         "tp": 3831.73,
         "filled_ts": 1794825565,
         "filled_time": "2026-11-16 10:39:25",
-        "mfe": 26.9,
-        "mae": 18.86
+        "mfe": 38.39,
+        "mae": 18.86,
+        "closed_ts": 1794961456,
+        "closed_time": "2026-11-18 00:24:16",
+        "outcome": "HIT_TP",
+        "pnl": 35.04
       }
-    ],
-    "closed_trades": []
+    ]
   },
   "counters": {
     "hours_scanned": 395,
