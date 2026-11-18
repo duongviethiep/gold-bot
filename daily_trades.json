@@ -1,6 +1,6 @@
 {
   "date": "2026-11-17",
-  "last_signal_slot": "2026-11-18 06",
+  "last_signal_slot": "2026-11-18 07",
   "last_summary_date": "2026-11-17",
   "single_mode": {
     "current_trade": {
@@ -22,7 +22,7 @@
       "tp": 3772.04,
       "filled_ts": 1794971178,
       "filled_time": "2026-11-18 03:06:18",
-      "mfe": 24.4,
+      "mfe": 28.97,
       "mae": 0.0
     },
     "closed_trades": []
@@ -48,7 +48,7 @@
         "tp": 3772.04,
         "filled_ts": 1794971178,
         "filled_time": "2026-11-18 03:06:18",
-        "mfe": 24.4,
+        "mfe": 28.97,
         "mae": 0.0
       },
       {
@@ -70,8 +70,26 @@
         "tp": 3760.11,
         "filled_ts": 1794979223,
         "filled_time": "2026-11-18 05:20:23",
-        "mfe": 7.63,
+        "mfe": 17.42,
         "mae": 0.0
+      },
+      {
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-11-18 07:01:12",
+        "created_ts": 1794985272,
+        "atr": 15.81,
+        "atr_source": "ATR14",
+        "atr_proxy": 33.8,
+        "adx": 27.7,
+        "rsi": 22.8,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3782.17,
+        "sl": 3805.88,
+        "tp": 3750.55
       }
     ],
     "closed_trades": [
@@ -104,8 +122,8 @@
     ]
   },
   "counters": {
-    "hours_scanned": 401,
-    "signals": 217,
+    "hours_scanned": 402,
+    "signals": 218,
     "choppy_skips": 97,
     "counter_trend_skips": 87,
     "hedge_skipped": 10,
