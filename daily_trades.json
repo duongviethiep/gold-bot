@@ -22,7 +22,7 @@
       "tp": 3744.6,
       "filled_ts": 1794993986,
       "filled_time": "2026-11-18 09:26:26",
-      "mfe": 12.19,
+      "mfe": 26.91,
       "mae": 6.73
     },
     "closed_trades": [
@@ -58,28 +58,6 @@
     "open_trades": [
       {
         "status": "ACTIVE",
-        "pending_hours": 2,
-        "time": "2026-11-18 07:01:12",
-        "created_ts": 1794985272,
-        "atr": 15.81,
-        "atr_source": "ATR14",
-        "atr_proxy": 33.8,
-        "adx": 27.7,
-        "rsi": 22.8,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "SELL",
-        "entry": 3782.17,
-        "sl": 3805.88,
-        "tp": 3750.55,
-        "filled_ts": 1794994338,
-        "filled_time": "2026-11-18 09:32:18",
-        "mfe": 18.66,
-        "mae": 0.0
-      },
-      {
-        "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-11-18 12:01:26",
         "created_ts": 1795003286,
@@ -96,7 +74,9 @@
         "sl": 3794.42,
         "tp": 3740.66,
         "filled_ts": 1795003755,
-        "filled_time": "2026-11-18 12:09:15"
+        "filled_time": "2026-11-18 12:09:15",
+        "mfe": 22.59,
+        "mae": 0.0
       }
     ],
     "closed_trades": [
@@ -177,6 +157,32 @@
         "closed_time": "2026-11-18 08:14:17",
         "outcome": "HIT_TP",
         "pnl": 32.78
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 2,
+        "time": "2026-11-18 07:01:12",
+        "created_ts": 1794985272,
+        "atr": 15.81,
+        "atr_source": "ATR14",
+        "atr_proxy": 33.8,
+        "adx": 27.7,
+        "rsi": 22.8,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3782.17,
+        "sl": 3805.88,
+        "tp": 3750.55,
+        "filled_ts": 1794994338,
+        "filled_time": "2026-11-18 09:32:18",
+        "mfe": 33.38,
+        "mae": 0.0,
+        "closed_ts": 1795006098,
+        "closed_time": "2026-11-18 12:48:18",
+        "outcome": "HIT_TP",
+        "pnl": 31.62
       }
     ]
   },
