@@ -60,26 +60,7 @@
     ]
   },
   "multi_mode": {
-    "open_trades": [
-      {
-        "status": "PENDING",
-        "pending_hours": 0,
-        "time": "2026-11-19 15:01:13",
-        "created_ts": 1795100473,
-        "atr": 16.77,
-        "atr_source": "ATR14",
-        "atr_proxy": 12.95,
-        "adx": 31.4,
-        "rsi": 38.5,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "OVERLAP",
-        "direction": "SELL",
-        "entry": 3719.64,
-        "sl": 3744.8,
-        "tp": 3686.1
-      }
-    ],
+    "open_trades": [],
     "closed_trades": [
       {
         "status": "CLOSED",
