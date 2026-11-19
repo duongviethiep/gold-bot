@@ -1,6 +1,6 @@
 {
   "date": "2026-11-18",
-  "last_signal_slot": "2026-11-19 10",
+  "last_signal_slot": "2026-11-19 11",
   "last_summary_date": "2026-11-18",
   "single_mode": {
     "current_trade": {
@@ -77,6 +77,24 @@
         "filled_time": "2026-11-19 05:07:17",
         "mfe": 3.29,
         "mae": 15.37
+      },
+      {
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-11-19 11:01:22",
+        "created_ts": 1795086082,
+        "atr": 17.15,
+        "atr_source": "ATR14",
+        "atr_proxy": 11.65,
+        "adx": 31.0,
+        "rsi": 44.3,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3742.74,
+        "sl": 3768.46,
+        "tp": 3708.44
       }
     ],
     "closed_trades": [
@@ -187,8 +205,8 @@
     ]
   },
   "counters": {
-    "hours_scanned": 429,
-    "signals": 245,
+    "hours_scanned": 430,
+    "signals": 246,
     "choppy_skips": 97,
     "counter_trend_skips": 87,
     "hedge_skipped": 10,
