@@ -80,24 +80,6 @@
     "open_trades": [
       {
         "status": "PENDING",
-        "pending_hours": 1,
-        "time": "2026-11-20 02:01:14",
-        "created_ts": 1795140074,
-        "atr": 24.22,
-        "atr_source": "ATR14",
-        "atr_proxy": 56.78,
-        "adx": 51.1,
-        "rsi": 15.0,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "ASIA",
-        "direction": "SELL",
-        "entry": 3566.92,
-        "sl": 3603.25,
-        "tp": 3518.48
-      },
-      {
-        "status": "PENDING",
         "pending_hours": 0,
         "time": "2026-11-20 03:01:11",
         "created_ts": 1795143671,
