@@ -3,28 +3,7 @@
   "last_signal_slot": "2026-11-20 17",
   "last_summary_date": "2026-11-19",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-20 10:01:15",
-      "created_ts": 1795168875,
-      "atr": 25.74,
-      "atr_source": "ATR14",
-      "atr_proxy": 56.55,
-      "adx": 57.5,
-      "rsi": 31.9,
-      "regime": "TREND_DOWN",
-      "with_trend": true,
-      "session": "LONDON",
-      "direction": "SELL",
-      "entry": 3577.26,
-      "sl": 3615.87,
-      "tp": 3525.78,
-      "filled_ts": 1795169778,
-      "filled_time": "2026-11-20 10:16:18",
-      "mfe": 43.22,
-      "mae": 15.17
-    },
+    "current_trade": null,
     "closed_trades": [
       {
         "status": "CLOSED",
@@ -103,6 +82,32 @@
         "closed_time": "2026-11-20 08:30:29",
         "outcome": "HIT_SL",
         "pnl": -37.76
+      },
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-20 10:01:15",
+        "created_ts": 1795168875,
+        "atr": 25.74,
+        "atr_source": "ATR14",
+        "atr_proxy": 56.55,
+        "adx": 57.5,
+        "rsi": 31.9,
+        "regime": "TREND_DOWN",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "SELL",
+        "entry": 3577.26,
+        "sl": 3615.87,
+        "tp": 3525.78,
+        "filled_ts": 1795169778,
+        "filled_time": "2026-11-20 10:16:18",
+        "mfe": 52.96,
+        "mae": 15.17,
+        "closed_ts": 1795195339,
+        "closed_time": "2026-11-20 17:22:19",
+        "outcome": "HIT_TP",
+        "pnl": 51.48
       }
     ]
   },
@@ -127,7 +132,7 @@
         "tp": 3516.95,
         "filled_ts": 1795161137,
         "filled_time": "2026-11-20 07:52:17",
-        "mfe": 35.75,
+        "mfe": 45.49,
         "mae": 22.64
       },
       {
@@ -149,7 +154,7 @@
         "tp": 3501.86,
         "filled_ts": 1795191204,
         "filled_time": "2026-11-20 16:13:24",
-        "mfe": 14.28,
+        "mfe": 30.66,
         "mae": 0.0
       }
     ],
