@@ -4,7 +4,7 @@
   "last_summary_date": "2026-11-23",
   "single_mode": {
     "current_trade": {
-      "status": "PENDING",
+      "status": "ACTIVE",
       "pending_hours": 0,
       "time": "2026-11-24 19:01:16",
       "created_ts": 1795546876,
@@ -19,7 +19,9 @@
       "direction": "SELL",
       "entry": 3563.27,
       "sl": 3593.32,
-      "tp": 3523.21
+      "tp": 3523.21,
+      "filled_ts": 1795547837,
+      "filled_time": "2026-11-24 19:17:17"
     },
     "closed_trades": [
       {
@@ -53,7 +55,7 @@
   "multi_mode": {
     "open_trades": [
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-11-24 19:01:16",
         "created_ts": 1795546876,
@@ -68,7 +70,9 @@
         "direction": "SELL",
         "entry": 3563.27,
         "sl": 3593.32,
-        "tp": 3523.21
+        "tp": 3523.21,
+        "filled_ts": 1795547837,
+        "filled_time": "2026-11-24 19:17:17"
       }
     ],
     "closed_trades": [
