@@ -22,7 +22,7 @@
       "tp": 3488.24,
       "filled_ts": 1795587078,
       "filled_time": "2026-11-25 06:11:18",
-      "mfe": 12.07,
+      "mfe": 34.5,
       "mae": 9.41
     },
     "closed_trades": [
@@ -75,26 +75,8 @@
         "tp": 3488.24,
         "filled_ts": 1795587078,
         "filled_time": "2026-11-25 06:11:18",
-        "mfe": 12.07,
+        "mfe": 34.5,
         "mae": 9.41
-      },
-      {
-        "status": "PENDING",
-        "pending_hours": 2,
-        "time": "2026-11-25 09:01:14",
-        "created_ts": 1795597274,
-        "atr": 18.76,
-        "atr_source": "ATR14",
-        "atr_proxy": 25.63,
-        "adx": 25.6,
-        "rsi": 35.1,
-        "regime": "TREND_DOWN",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "SELL",
-        "entry": 3542.18,
-        "sl": 3570.32,
-        "tp": 3504.66
       }
     ],
     "closed_trades": [
