@@ -1,6 +1,6 @@
 {
   "date": "2026-11-26",
-  "last_signal_slot": "2026-11-27 12",
+  "last_signal_slot": "2026-11-27 13",
   "last_summary_date": "2026-11-26",
   "single_mode": {
     "current_trade": {
@@ -23,7 +23,7 @@
       "filled_ts": 1795773557,
       "filled_time": "2026-11-27 09:59:17",
       "mfe": 8.12,
-      "mae": 0.0
+      "mae": 7.49
     },
     "closed_trades": []
   },
@@ -49,14 +49,32 @@
         "filled_ts": 1795773557,
         "filled_time": "2026-11-27 09:59:17",
         "mfe": 8.12,
-        "mae": 0.0
+        "mae": 7.49
+      },
+      {
+        "status": "PENDING",
+        "pending_hours": 0,
+        "time": "2026-11-27 13:01:18",
+        "created_ts": 1795784478,
+        "atr": 17.02,
+        "atr_source": "ATR14",
+        "atr_proxy": 44.85,
+        "adx": 38.1,
+        "rsi": 69.8,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "OVERLAP",
+        "direction": "BUY",
+        "entry": 3660.7,
+        "sl": 3635.17,
+        "tp": 3694.74
       }
     ],
     "closed_trades": []
   },
   "counters": {
-    "hours_scanned": 573,
-    "signals": 314,
+    "hours_scanned": 574,
+    "signals": 315,
     "choppy_skips": 128,
     "counter_trend_skips": 131,
     "hedge_skipped": 10,
