@@ -97,7 +97,7 @@
         "tp": 3663.58
       },
       {
-        "status": "PENDING",
+        "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-11-27 20:01:15",
         "created_ts": 1795809675,
@@ -112,7 +112,9 @@
         "direction": "BUY",
         "entry": 3646.97,
         "sl": 3618.55,
-        "tp": 3684.87
+        "tp": 3684.87,
+        "filled_ts": 1795809921,
+        "filled_time": "2026-11-27 20:05:21"
       }
     ],
     "closed_trades": [
