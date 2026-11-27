@@ -1,6 +1,6 @@
 {
   "date": "2026-11-26",
-  "last_signal_slot": "2026-11-27 20",
+  "last_signal_slot": "2026-11-27 21",
   "last_summary_date": "2026-11-26",
   "single_mode": {
     "current_trade": {
@@ -79,24 +79,6 @@
         "mae": 14.31
       },
       {
-        "status": "PENDING",
-        "pending_hours": 3,
-        "time": "2026-11-27 17:01:14",
-        "created_ts": 1795798874,
-        "atr": 17.96,
-        "atr_source": "ATR14",
-        "atr_proxy": 35.76,
-        "adx": 28.2,
-        "rsi": 54.6,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "NY",
-        "direction": "BUY",
-        "entry": 3627.66,
-        "sl": 3600.72,
-        "tp": 3663.58
-      },
-      {
         "status": "ACTIVE",
         "pending_hours": 0,
         "time": "2026-11-27 20:01:15",
@@ -114,7 +96,9 @@
         "sl": 3618.55,
         "tp": 3684.87,
         "filled_ts": 1795809921,
-        "filled_time": "2026-11-27 20:05:21"
+        "filled_time": "2026-11-27 20:05:21",
+        "mfe": 7.58,
+        "mae": 7.82
       }
     ],
     "closed_trades": [
@@ -173,12 +157,12 @@
     ]
   },
   "counters": {
-    "hours_scanned": 581,
-    "signals": 321,
+    "hours_scanned": 582,
+    "signals": 322,
     "choppy_skips": 128,
     "counter_trend_skips": 132,
     "hedge_skipped": 10,
     "superseded": 0,
-    "gap_skipped": 206
+    "gap_skipped": 207
   }
 }
