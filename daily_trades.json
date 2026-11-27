@@ -3,34 +3,10 @@
   "last_signal_slot": "2026-11-27 13",
   "last_summary_date": "2026-11-26",
   "single_mode": {
-    "current_trade": {
-      "status": "ACTIVE",
-      "pending_hours": 0,
-      "time": "2026-11-27 09:01:22",
-      "created_ts": 1795770082,
-      "atr": 18.42,
-      "atr_source": "ATR14",
-      "atr_proxy": 40.71,
-      "adx": 31.5,
-      "rsi": 77.7,
-      "regime": "TREND_UP",
-      "with_trend": true,
-      "session": "LONDON",
-      "direction": "BUY",
-      "entry": 3671.44,
-      "sl": 3643.81,
-      "tp": 3708.28,
-      "filled_ts": 1795773557,
-      "filled_time": "2026-11-27 09:59:17",
-      "mfe": 8.12,
-      "mae": 12.33
-    },
-    "closed_trades": []
-  },
-  "multi_mode": {
-    "open_trades": [
+    "current_trade": null,
+    "closed_trades": [
       {
-        "status": "ACTIVE",
+        "status": "CLOSED",
         "pending_hours": 0,
         "time": "2026-11-27 09:01:22",
         "created_ts": 1795770082,
@@ -49,8 +25,16 @@
         "filled_ts": 1795773557,
         "filled_time": "2026-11-27 09:59:17",
         "mfe": 8.12,
-        "mae": 12.33
-      },
+        "mae": 29.47,
+        "closed_ts": 1795786339,
+        "closed_time": "2026-11-27 13:32:19",
+        "outcome": "HIT_SL",
+        "pnl": -27.63
+      }
+    ]
+  },
+  "multi_mode": {
+    "open_trades": [
       {
         "status": "ACTIVE",
         "pending_hours": 0,
@@ -69,10 +53,39 @@
         "sl": 3635.17,
         "tp": 3694.74,
         "filled_ts": 1795785268,
-        "filled_time": "2026-11-27 13:14:28"
+        "filled_time": "2026-11-27 13:14:28",
+        "mfe": 0.0,
+        "mae": 18.73
       }
     ],
-    "closed_trades": []
+    "closed_trades": [
+      {
+        "status": "CLOSED",
+        "pending_hours": 0,
+        "time": "2026-11-27 09:01:22",
+        "created_ts": 1795770082,
+        "atr": 18.42,
+        "atr_source": "ATR14",
+        "atr_proxy": 40.71,
+        "adx": 31.5,
+        "rsi": 77.7,
+        "regime": "TREND_UP",
+        "with_trend": true,
+        "session": "LONDON",
+        "direction": "BUY",
+        "entry": 3671.44,
+        "sl": 3643.81,
+        "tp": 3708.28,
+        "filled_ts": 1795773557,
+        "filled_time": "2026-11-27 09:59:17",
+        "mfe": 8.12,
+        "mae": 29.47,
+        "closed_ts": 1795786339,
+        "closed_time": "2026-11-27 13:32:19",
+        "outcome": "HIT_SL",
+        "pnl": -27.63
+      }
+    ]
   },
   "counters": {
     "hours_scanned": 574,
