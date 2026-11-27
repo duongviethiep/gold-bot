@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-26",
-  "last_signal_slot": "2026-11-27 21",
-  "last_summary_date": "2026-11-26",
+  "date": "2026-11-27",
+  "last_signal_slot": "2026-11-27 22",
+  "last_summary_date": "2026-11-27",
   "single_mode": {
     "current_trade": {
       "status": "ACTIVE",
@@ -25,34 +25,7 @@
       "mfe": 17.81,
       "mae": 14.31
     },
-    "closed_trades": [
-      {
-        "status": "CLOSED",
-        "pending_hours": 0,
-        "time": "2026-11-27 09:01:22",
-        "created_ts": 1795770082,
-        "atr": 18.42,
-        "atr_source": "ATR14",
-        "atr_proxy": 40.71,
-        "adx": 31.5,
-        "rsi": 77.7,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "BUY",
-        "entry": 3671.44,
-        "sl": 3643.81,
-        "tp": 3708.28,
-        "filled_ts": 1795773557,
-        "filled_time": "2026-11-27 09:59:17",
-        "mfe": 8.12,
-        "mae": 29.47,
-        "closed_ts": 1795786339,
-        "closed_time": "2026-11-27 13:32:19",
-        "outcome": "HIT_SL",
-        "pnl": -27.63
-      }
-    ]
+    "closed_trades": []
   },
   "multi_mode": {
     "open_trades": [
@@ -101,68 +74,15 @@
         "mae": 7.82
       }
     ],
-    "closed_trades": [
-      {
-        "status": "CLOSED",
-        "pending_hours": 0,
-        "time": "2026-11-27 09:01:22",
-        "created_ts": 1795770082,
-        "atr": 18.42,
-        "atr_source": "ATR14",
-        "atr_proxy": 40.71,
-        "adx": 31.5,
-        "rsi": 77.7,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "LONDON",
-        "direction": "BUY",
-        "entry": 3671.44,
-        "sl": 3643.81,
-        "tp": 3708.28,
-        "filled_ts": 1795773557,
-        "filled_time": "2026-11-27 09:59:17",
-        "mfe": 8.12,
-        "mae": 29.47,
-        "closed_ts": 1795786339,
-        "closed_time": "2026-11-27 13:32:19",
-        "outcome": "HIT_SL",
-        "pnl": -27.63
-      },
-      {
-        "status": "CLOSED",
-        "pending_hours": 0,
-        "time": "2026-11-27 13:01:18",
-        "created_ts": 1795784478,
-        "atr": 17.02,
-        "atr_source": "ATR14",
-        "atr_proxy": 44.85,
-        "adx": 38.1,
-        "rsi": 69.8,
-        "regime": "TREND_UP",
-        "with_trend": true,
-        "session": "OVERLAP",
-        "direction": "BUY",
-        "entry": 3660.7,
-        "sl": 3635.17,
-        "tp": 3694.74,
-        "filled_ts": 1795785268,
-        "filled_time": "2026-11-27 13:14:28",
-        "mfe": 0.0,
-        "mae": 25.56,
-        "closed_ts": 1795788499,
-        "closed_time": "2026-11-27 14:08:19",
-        "outcome": "HIT_SL",
-        "pnl": -25.53
-      }
-    ]
+    "closed_trades": []
   },
   "counters": {
-    "hours_scanned": 582,
-    "signals": 322,
+    "hours_scanned": 583,
+    "signals": 323,
     "choppy_skips": 128,
     "counter_trend_skips": 132,
     "hedge_skipped": 10,
     "superseded": 0,
-    "gap_skipped": 207
+    "gap_skipped": 208
   }
 }
